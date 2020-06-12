@@ -30,12 +30,12 @@ import asyncio
 
 #async infras
 #executor = ProcessPoolExecutor()
+#ThreadPool easy for debug
 executor = ThreadPoolExecutor()
 loop = asyncio.new_event_loop()
 
 #monitor infras
 sched = BackgroundScheduler()
-
 
 def load_config(path):
     try:
