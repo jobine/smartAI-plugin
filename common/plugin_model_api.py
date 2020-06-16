@@ -1,7 +1,7 @@
 import time
 from telemetry import log
 
-from flask import Flask, request, g, jsonify
+from flask import Flask, request, g, jsonify, make_response
 from flask_restful import Resource, Api
 
 from common.plugin_service import PluginService
@@ -17,7 +17,7 @@ def try_except(fn):
             return fn(*args, **kwargs)
         except Exception as e:
             log.error("-----Exception-----")
-            return jsonify(dict(status=STATUS_FAIL, message='Unknown error, please check your request. ' + str(e))), 502
+            return make_response(jsonify(dict(status=STATUS_FAIL, message='Unknown error, please check your request. ' + str(e))), 502)
     return wrapped
 
 @app.route('/', methods=['GET'])

@@ -160,7 +160,11 @@ class MagaPluginService(PluginService):
         if result != STATUS_SUCCESS:
             return make_response(jsonify(dict(status=STATUS_FAIL, message='Verify failed! ' + message)), 400)
 
-        asyncio.ensure_future(loop.run_in_executor(executor, self.inference_wrapper, Request(request), model_key, self.prepare_inference_data(request_body), self.inference_callback))
+        #request can't be transferred to thread
+        newrequest = Request()
+        newrequest.headers = request.headers
+        newrequest.data = request.data
+        asyncio.ensure_future(loop.run_in_executor(executor, self.inference_wrapper, newrequest, model_key, self.prepare_inference_data(request_body), self.inference_callback))
         return jsonify(dict(status=STATUS_SUCCESS, message='Inference task created'))
  
     def state(self, request, model_key):
