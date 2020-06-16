@@ -38,6 +38,11 @@ def after_request(response):
     # TODO log here
     return response
 
+class PluginModelIndexAPI(Resource):
+    def put(self):
+        return "Welcome to TSANA Computing Platform"
+
+api.add_resource(PluginModelIndexAPI, '/')
 
 class PluginModelAPI(Resource):  # The API class that handles a single user
     def __init__(self, plugin_service: PluginService):

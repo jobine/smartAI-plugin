@@ -3,7 +3,7 @@ import time
 from time import gmtime, strftime
 import os
 import shutil
-from flask import jsonify
+from flask import jsonify, make_response
 from collections import namedtuple
 import uuid
 
@@ -29,9 +29,9 @@ from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 import asyncio
 
 #async infras
-#executor = ProcessPoolExecutor()
+executor = ProcessPoolExecutor()
 #ThreadPool easy for debug
-executor = ThreadPoolExecutor()
+#executor = ThreadPoolExecutor()
 loop = asyncio.new_event_loop()
 
 #monitor infras
@@ -145,11 +145,11 @@ class PluginService():
         subscription = request.headers.get('apim-subscription-id', 'Official')
         result, message = self.do_verify(subscription, request_body)
         if result != STATUS_SUCCESS:
-            return jsonify(dict(status=STATUS_FAIL, message='Verify failed! ' + message)), 400
+            return make_response(jsonify(dict(status=STATUS_FAIL, message='Verify failed! ' + message)), 400)
 
         models_in_train = [model for model in get_model_list(self.config, subscription) if model['state'] == ModelState.TRAINING.name]
         if len(models_in_train) >= self.config.models_in_training_limit:
-            return jsonify(dict(status=STATUS_FAIL, message='Models in training limit reached! Abort training this time.')), 400
+            return make_response(jsonify(dict(status=STATUS_FAIL, message='Models in training limit reached! Abort training this time.')), 400)
 
         log.info('Create training task')
         try:
@@ -158,21 +158,19 @@ class PluginService():
             meta = get_meta(self.config, subscription, model_key)
             timekey = meta['timekey']
             asyncio.ensure_future(loop.run_in_executor(executor, self.train_wrapper, subscription, model_key, request_body, timekey, self.train_callback))
-            
-            time.sleep(100000)
-            return jsonify(dict(status=STATUS_SUCCESS, model_key=model_key, message='Training task created')), 200
+            return make_response(jsonify(dict(status=STATUS_SUCCESS, model_key=model_key, message='Training task created')), 200)
         except Exception as e: 
             meta = get_meta(self.config, subscription, model_key)
             if meta is not None and meta['timekey'] == timekey: 
                 update_state(self.config, subscription, model_key, ModelState.FAILED, str(e))
-            return jsonify(dict(status=STATUS_FAIL, message='Fail to create new task ' + str(e))), 400
+            return make_response(jsonify(dict(status=STATUS_FAIL, message='Fail to create new task ' + str(e))), 400)
 
     def inference(self, request, model_key):
         request_body = json.loads(request.data)
         subscription = request.headers.get('apim-subscription-id', 'Official')
         result, message = self.do_verify(subscription, request_body)
         if result != STATUS_SUCCESS:
-            return jsonify(dict(status=STATUS_FAIL, message='Verify failed! ' + message)), 400
+            return make_response(jsonify(dict(status=STATUS_FAIL, message='Verify failed! ' + message)), 400)
 
         meta = get_meta(self.config, subscription, model_key)
         if meta['state'] != ModelState.READY.name:
@@ -181,26 +179,25 @@ class PluginService():
         log.info('Create inference task')
         timekey = meta['timekey']  
         asyncio.ensure_future(loop.run_in_executor(executor, self.inference_wrapper, subscription, model_key, request_body, timekey, self.inference_callback))
-        time.sleep(100000)
-        return jsonify(dict(status=STATUS_SUCCESS, message='Inference task created')), 200
+        return make_response(jsonify(dict(status=STATUS_SUCCESS, message='Inference task created')), 200)
 
     def state(self, request, model_key):
         subscription = request.headers.get('apim-subscription-id', 'Official')
         meta = get_meta(self.config, subscription, model_key)
         if meta == None:
-            return jsonify(dict(status=STATUS_FAIL, message='Model is not found! ')), 400
+            return make_response(jsonify(dict(status=STATUS_FAIL, message='Model is not found! ')), 400)
 
-        return jsonify(dict(meta['state'])), 200
+        return make_response(jsonify(dict(meta['state'])), 200)
 
     def list_models(self, request):
         subscription = request.headers.get('apim-subscription-id', 'Official')
-        return jsonify(get_model_list(self.config, subscription)), 200
+        return make_response(jsonify(get_model_list(self.config, subscription)), 200)
 
     def delete(self, request, model_key):
         subscription = request.headers.get('apim-subscription-id', 'Official')
         result, message = self.do_delete(subscription, model_key)
         if result == STATUS_SUCCESS:
             update_state(self.config, subscription, model_key, ModelState.DELETED)
-            return jsonify(dict(status=STATUS_SUCCESS, model_key=model_key)), 200
+            return make_response(jsonify(dict(status=STATUS_SUCCESS, model_key=model_key)), 200)
         else:
-            return jsonify(dict(status=STATUS_FAIL, message=message)), 400
+            return make_response(jsonify(dict(status=STATUS_FAIL, message=message)), 400)

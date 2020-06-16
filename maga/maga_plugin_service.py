@@ -1,6 +1,6 @@
 import os
 import json
-from flask import jsonify
+from flask import jsonify, make_response
 import uuid
 import time
 import shutil
@@ -149,26 +149,25 @@ class MagaPluginService(PluginService):
         request_body = json.loads(request.data)
         result, message = self.do_verify(request_body)
         if result != STATUS_SUCCESS:
-            return jsonify(dict(status=STATUS_FAIL, message='Verify failed! ' + message)), 400
+            return make_response(jsonify(dict(status=STATUS_FAIL, message='Verify failed! ' + message)), 400)
      
         request.data = self.prepare_training_data(request_body)
-        response = self.magaclient.train(request)
-        return jsonify(dict(response)), 200
+        return self.magaclient.train(request)
 
     def inference(self, request, model_key):
         request_body = json.loads(request.data)
         result, message = self.do_verify(request_body)
         if result != STATUS_SUCCESS:
-            return jsonify(dict(status=STATUS_FAIL, message='Verify failed! ' + message)), 400
+            return make_response(jsonify(dict(status=STATUS_FAIL, message='Verify failed! ' + message)), 400)
 
-        asyncio.ensure_future(loop.run_in_executor(executor, self.inference_wrapper, request, model_key, self.prepare_inference_data(request_body), self.inference_callback))
-        return jsonify(dict(status=STATUS_SUCCESS, message='Inference task created')), 200
-
+        asyncio.ensure_future(loop.run_in_executor(executor, self.inference_wrapper, Request(request), model_key, self.prepare_inference_data(request_body), self.inference_callback))
+        return jsonify(dict(status=STATUS_SUCCESS, message='Inference task created'))
+ 
     def state(self, request, model_key):
-        return jsonify(dict(self.magaclient.state(request, model_key))), 200
+        return self.magaclient.state(request, model_key)
 
     def delete(self, request, model_key):
-        return jsonify(dict(self.magaclient.delete_model(request, model_key))), 200
+        return self.magaclient.delete_model(request, model_key)
     
     def list_models(self, request):
-        return jsonify(dict(self.magaclient.list_models(request))), 200
+        return self.magaclient.list_models(request)
