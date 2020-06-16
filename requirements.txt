@@ -2,7 +2,7 @@ jinja2
 pyyaml
 kubernetes==8.0.1
 kafka-python==1.4.7
-flask==1.0.2
+Flask==1.1.1
 flask_restful
 requests
 python-dateutil
@@ -15,5 +15,6 @@ azure-cosmosdb-table==1.0.6
 Werkzeug==0.16.0
 gunicorn==19.9.0
 gevent==1.4.0
+apscheduler
 
 https://pythonpackagerepo.blob.core.windows.net/pip-package/anomaly_detector_telemetry-3.0.tar.gz
