@@ -18,11 +18,11 @@ contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additio
 ## Use Maga plugin
     cd smartAI-plugin 
     docker build -f maga-plugin.Dockerfile -t maga:latest .
-    docker run maga
+    docker run -p 56789:56789 maga
 ## Use Forecast plugin
     cd smartAI-plugin 
     docker build -f forecast-plugin.Dockerfile -t forecast:latest .
-    docker run forecast
+    docker run -p 56789:56789 forecast
 ## Implement your own plugin
     Inherit PluginService in commone and implement do_verify, do_train, do_state, do_inference, do_delete, etc. if needed.
     Add apis to run_server, bind restful apis with your plugin.
