@@ -3,10 +3,10 @@ import datetime
 import traceback
 import sys
 
-from .util.timeutil import get_time_offset, str_to_dt, dt_to_str
-from .util.series import Series
-from .util.retryrequests import RetryRequests
-from .util.constant import STATUS_SUCCESS, STATUS_FAIL
+from common.util.timeutil import get_time_offset, str_to_dt, dt_to_str
+from common.util.series import Series
+from common.util.retryrequests import RetryRequests
+from common.util.constant import STATUS_SUCCESS, STATUS_FAIL
 
 from telemetry import log
 

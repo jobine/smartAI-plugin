@@ -4,8 +4,8 @@ from telemetry import log
 from flask import Flask, request, g, jsonify
 from flask_restful import Resource, Api
 
-from .plugin_service import PluginService
-from .util.constant import STATUS_SUCCESS, STATUS_FAIL
+from common.plugin_service import PluginService
+from common.util.constant import STATUS_SUCCESS, STATUS_FAIL
 
 app = Flask(__name__)
 api = Api(app)
@@ -48,6 +48,10 @@ class PluginModelAPI(Resource):  # The API class that handles a single user
         return self.__plugin_service.state(request, model_key)
 
     @try_except
+    def post(self, model_key):
+        pass
+
+    @try_except
     def put(self, model_key):
         pass
 
@@ -55,22 +59,14 @@ class PluginModelAPI(Resource):  # The API class that handles a single user
     def delete(self, model_key):
         return self.__plugin_service.delete(request, model_key)
 
-    @try_except
-    def post(self):
-        return self.__plugin_service.create(request)
-
-    @try_except
-    def patch(self, model_key):
-        return self.__plugin_service.update(request, model_key)
-
 
 class PluginModelTrainAPI(Resource):
     def __init__(self, plugin_service: PluginService):
         self.__plugin_service = plugin_service
 
     @try_except
-    def post(self, model_key):
-        return self.__plugin_service.train(request, model_key)
+    def post(self):
+        return self.__plugin_service.train(request)
 
 
 class PluginModelInferenceAPI(Resource):

@@ -14,7 +14,7 @@ from common.util.timeutil import dt_to_str, dt_to_str_file_name, str_to_dt
 from common.util.csv import save_to_csv
 from common.util.azureblob import AzureBlob
 
-from .magaclient import MAGAClient
+from maga.magaclient import MAGAClient
 
 from concurrent.futures import ThreadPoolExecutor
 import asyncio
@@ -92,8 +92,7 @@ class MagaPluginService(PluginService):
         result['variable'] = variable
         result['fillUpMode'] = parameters['instance']['params']['fillUpMode']
         result['tracebackWindow'] = parameters['instance']['params']['tracebackWindow']
-        #result['source'] = blob_url
-        result['source'] = '/data/training_data.zip'
+        result['source'] = blob_url
         result['startTime'] = dt_to_str(start_time)
         result['endTime'] = dt_to_str(end_time)
 
@@ -153,8 +152,8 @@ class MagaPluginService(PluginService):
             return jsonify(dict(status=STATUS_FAIL, message='Verify failed! ' + message)), 400
      
         request.data = self.prepare_training_data(request_body)
-
-        return jsonify(dict(self.magaclient.train(request))), 200
+        response = self.magaclient.train(request)
+        return jsonify(dict(response)), 200
 
     def inference(self, request, model_key):
         request_body = json.loads(request.data)
