@@ -19,4 +19,4 @@ lstm:
   validation_freq: 2
   steps_per_epoc: 100
   train_history_step: 730
-  epoc: 3
+  epoc: 30

@@ -1,4 +1,10 @@
+import os
+import sys
 from os import environ
+
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir))
+
+environ['SERVICE_CONFIG_FILE'] = 'forecast/config/service_config.yaml'
 
 from forecast.forecast_plugin_service import ForecastPluginService
 from common.plugin_model_api import api, PluginModelAPI, PluginModelListAPI, PluginModelTrainAPI, \
@@ -6,11 +12,11 @@ from common.plugin_model_api import api, PluginModelAPI, PluginModelListAPI, Plu
 
 forecast = ForecastPluginService()
 
-api.add_resource(PluginModelListAPI(forecast), '/forecast/models')
-api.add_resource(PluginModelAPI(forecast), '/forecast/model', '/forecast/model/<model_key>')
-api.add_resource(PluginModelTrainAPI(forecast), '/forecast/<model_key>/train')
-api.add_resource(PluginModelInferenceAPI(forecast), '/forecast/<model_key>/inference')
-api.add_resource(PluginModelParameterAPI(forecast), '/forecast/parameters')
+api.add_resource(PluginModelListAPI, '/forecast/models', resource_class_kwargs={'plugin_service': forecast})
+api.add_resource(PluginModelAPI, '/forecast/models/<model_key>', resource_class_kwargs={'plugin_service': forecast})
+api.add_resource(PluginModelTrainAPI, '/forecast/models/train', resource_class_kwargs={'plugin_service': forecast})
+api.add_resource(PluginModelInferenceAPI, '/forecast/models/<model_key>/inference', resource_class_kwargs={'plugin_service': forecast})
+api.add_resource(PluginModelParameterAPI, '/forecast/parameters', resource_class_kwargs={'plugin_service': forecast})
 
 if __name__ == '__main__':
     HOST = environ.get('SERVER_HOST', '0.0.0.0')
