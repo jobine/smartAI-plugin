@@ -53,18 +53,20 @@ def get_meta(config, subscription, model_key):
 # Return:
 #   result: STATUS_SUCCESS / STATUS_FAIL
 #   message: description for the result 
-def update_state(config, subscription, model_key, state:str=None, last_error:str=None): 
+def update_state(config, subscription, model_key, state:ModelState=None, last_error:str=None): 
     azure_table = AzureTable(config.az_storage_account, config.az_storage_account_key)
     meta = get_meta(config, subscription, model_key)
     if meta == None or meta['state'] == ModelState.DELETED.name:
         return STATUS_FAIL, 'Model is not found!'
 
-    etag = azure_table.insert_or_replace_entity(config.az_tsana_meta_table, 
-            subscription,
-            model_key,
-            state=state if state is not None else meta['state'],
-            last_error=last_error if last_error is not None else meta['last_error'],
-            timekey=time.time())
+    if state is not None:
+        meta['state'] = state.name
+
+    if last_error is not None:
+        meta['last_error'] = last_error
+
+    meta['timekey'] = time.time()
+    etag = azure_table.insert_or_replace_entity2(config.az_tsana_meta_table, meta)
 
     log.info("Insert or replace %s to table %s, result: %s." % (model_key, config.az_tsana_meta_table, etag))
 
@@ -96,12 +98,12 @@ def get_model_list(config, subscription):
 def clear_state_when_necessary(config, subscription, model_key, entity):
     if entity['state'] == ModelState.TRAINING.name:
         azure_table = AzureTable(config.az_storage_account, config.az_storage_account_key)
-        if not azure_table.exists_table(config.az_monitor_table):
+        if not azure_table.exists_table(config.az_tsana_moniter_table):
             return entity
         
         # Find the training owner in the monitor table and make sure it is alive
         try: 
-            monitor_entity = azure_table.get_entity(config.az_monitor_table, config.tsana_app_name, thumbprint)
+            monitor_entity = azure_table.get_entity(config.az_tsana_moniter_table, config.tsana_app_name, thumbprint)
         except: 
             monitor_entity = None
         now = time.time()
@@ -111,6 +113,6 @@ def clear_state_when_necessary(config, subscription, model_key, entity):
             # The owner is dead, then
             # Fix the state
             entity['state'] = ModelState.FAILED.name
-            update_state(config, subscription, model_key, entity['state'], 'Training job dead')
+            update_state(config, subscription, model_key, ModelState.FAILED, 'Training job dead')
                 
     return entity

@@ -9,7 +9,7 @@ import uuid
 
 from common.util.timeutil import get_time_offset, str_to_dt, dt_to_str, get_time_list
 from common.util.data import get_metric_meta, do_verify, get_timeseries, upload_data
-from common.util.meta import insert_meta, get_meta, update_state, get_model_list
+from common.util.meta import insert_meta, get_meta, update_state, get_model_list, clear_state_when_necessary
 from common.util.model import copy_tree_and_zip_and_update_remote, prepare_model
 from common.util.constant import STATUS_SUCCESS, STATUS_FAIL
 from common.util.constant import ModelState
@@ -29,9 +29,9 @@ from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 import asyncio
 
 #async infras
-executor = ProcessPoolExecutor()
+#executor = ProcessPoolExecutor()
 #ThreadPool easy for debug
-#executor = ThreadPoolExecutor()
+executor = ThreadPoolExecutor()
 loop = asyncio.new_event_loop()
 
 #monitor infras
@@ -131,7 +131,7 @@ class PluginService():
                 model_state = ModelState.FAILED
                 last_error = 'Model storage failed!'
 
-        return update_state(self.config, subscription, model_key, model_state.name, last_error)
+        return update_state(self.config, subscription, model_key, model_state, last_error)
 
     def inference_callback(self, subscription, model_key, timekey, result, last_error=''):
         log.info ("inference callback %s by %s , result = %s", model_key, subscription, result)
@@ -187,7 +187,8 @@ class PluginService():
         if meta == None:
             return make_response(jsonify(dict(status=STATUS_FAIL, message='Model is not found! ')), 400)
 
-        return make_response(jsonify(dict(meta['state'])), 200)
+        clear_state_when_necessary(self.config, subscription, model_key, meta)
+        return make_response(jsonify(dict(model_key=model_key, state=meta['state'])), 200)
 
     def list_models(self, request):
         subscription = request.headers.get('apim-subscription-id', 'Official')

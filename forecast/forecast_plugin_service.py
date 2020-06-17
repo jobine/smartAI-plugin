@@ -204,7 +204,6 @@ class ForecastPluginService(PluginService):
                                                                                         - offset + idx))
                             # print(result[idx]['timestamp'])
                     self.tsanaclient.save_inference_result(parameters, result)
-                    log.info(result)
                 else:
                     log.error("No result for this inference %s, key %s" % (dt_to_str(cur_time), model_dir))
                 # process = psutil.Process(os.getpid())

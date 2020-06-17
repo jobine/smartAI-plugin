@@ -154,6 +154,7 @@ class TSANAClient(object):
     #   messagee: description for the result 
     def save_inference_result(self, parameters, result):
         try: 
+
             if len(result) <= 0: 
                 return STATUS_SUCCESS, ''
 
