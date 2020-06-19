@@ -147,8 +147,8 @@ class PluginService():
         if result != STATUS_SUCCESS:
             return make_response(jsonify(dict(status=STATUS_FAIL, message='Verify failed! ' + message)), 400)
 
-        models_in_train = [model for model in get_model_list(self.config, subscription) if model['state'] == ModelState.TRAINING.name]
-        if len(models_in_train) >= self.config.models_in_training_limit:
+        models_in_train = [model for model in get_model_list(self.config, subscription) if model['inst_id'] == request_body['instance']['instanceId'] and model['state'] == ModelState.TRAINING.name]
+        if len(models_in_train) >= self.config.models_in_training_limit_per_instance:
             return make_response(jsonify(dict(status=STATUS_FAIL, message='Models in training limit reached! Abort training this time.')), 400)
 
         log.info('Create training task')
@@ -176,8 +176,17 @@ class PluginService():
         if meta['state'] != ModelState.READY.name:
             return STATUS_FAIL, 'Cannot do inference right now, status is ' + meta['state']
 
+        current_set = meta['series_set']
+        current_para = meta['para']
+
+        new_set = str(request_body['seriesSets'])
+        new_para = str(request_body['instance']['params'])
+
+        if current_set != new_set or current_para != new_para: 
+            return STATUS_FAIL, 'Inconsistent series sets or params!'
+
         log.info('Create inference task')
-        timekey = meta['timekey']  
+        timekey = meta['timekey']
         asyncio.ensure_future(loop.run_in_executor(executor, self.inference_wrapper, subscription, model_key, request_body, timekey, self.inference_callback))
         return make_response(jsonify(dict(status=STATUS_SUCCESS, message='Inference task created')), 200)
 
