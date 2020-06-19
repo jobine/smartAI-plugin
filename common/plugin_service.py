@@ -8,7 +8,6 @@ from collections import namedtuple
 import uuid
 
 from common.util.timeutil import get_time_offset, str_to_dt, dt_to_str, get_time_list
-from common.util.data import get_metric_meta, do_verify, get_timeseries, upload_data
 from common.util.meta import insert_meta, get_meta, update_state, get_model_list, clear_state_when_necessary
 from common.util.model import copy_tree_and_zip_and_update_remote, prepare_model
 from common.util.constant import STATUS_SUCCESS, STATUS_FAIL
