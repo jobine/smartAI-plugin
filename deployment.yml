@@ -1,14 +1,17 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: maga-plugin
+  name: maga-plugin-loadbalancer
+  namespace: maga-plugin
   labels:
-    app: maga-plugin
+    app: maga-plugin-loadbalancer
 spec:
   type: LoadBalancer
-  loadBalancerIP: 40.64.67.227
+  loadBalancerIP: 52.148.149.151
   ports:
   - port: 56789
+    protocol: TCP
+    targetPort: 56789
   selector:
     app: maga-plugin
     role: api
@@ -35,7 +38,7 @@ spec:
       containers:
       - name: maga
         imagePullPolicy: Always
-        image: tsanaplugin.azurecr.io/maga:20200619
+        image: tsanaplugin.azurecr.io/maga:latest
         env:
         - name: TELEMETRY_TYPE
           value: "mon3"
@@ -44,6 +47,8 @@ spec:
         - name: KENSHO2_PROFILE
           value: "maga-plugin"
         - name: MON3_APP
+          value: "maga-plugin"
+        - name: MON3_SERVICE
           value: "maga-plugin"
         ports:
         - containerPort: 56789
