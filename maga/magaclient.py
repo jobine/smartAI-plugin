@@ -15,7 +15,7 @@ class MAGAClient(object):
 
     def post(self, path, data, subscription):
         url = self.endpoint + path
-        headers = {'Content-Type': 'application/json', 'apim-subscription-id': subscription}
+        headers = {'Content-Type': 'application/json', 'Ocp-Apim-Subscription-Key': subscription}
         if self.username and self.password:
             auth = (self.username, self.password)
         else:
@@ -30,7 +30,7 @@ class MAGAClient(object):
 
     def get(self, path, subscription):
         url = self.endpoint + path
-        headers = {'Content-Type': 'application/json', 'apim-subscription-id': subscription}
+        headers = {'Content-Type': 'application/json', 'Ocp-Apim-Subscription-Key': subscription}
         if self.username and self.password:
             auth = (self.username, self.password)
         else:
@@ -44,7 +44,7 @@ class MAGAClient(object):
 
     def delete(self, path, subscription):
         url = self.endpoint + path
-        headers = {'Content-Type': 'application/json', 'apim-subscription-id': subscription}
+        headers = {'Content-Type': 'application/json', 'Ocp-Apim-Subscription-Key': subscription}
         if self.username and self.password:
             auth = (self.username, self.password)
         else:
@@ -72,4 +72,4 @@ class MAGAClient(object):
         return self.delete('/multivariate/models/' + model_key, request.headers.get('apim-subscription-id', 'Official'))
 
     def get_result(self, request, result_id):
-        return self.get('/multivariate/result/' + result_id, request.headers.get('apim-subscription-id', 'Official'))
+        return self.get('/multivariate/results/' + result_id, request.headers.get('apim-subscription-id', 'Official'))
