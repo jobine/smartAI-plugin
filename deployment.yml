@@ -38,7 +38,7 @@ spec:
       containers:
       - name: maga
         imagePullPolicy: Always
-        image: tsanaplugin.azurecr.io/maga:latest
+        image: tsanaplugin.azurecr.io/maga:20200620
         env:
         - name: TELEMETRY_TYPE
           value: "mon3"

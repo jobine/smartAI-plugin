@@ -223,29 +223,54 @@ class MagaPluginService(PluginService):
         return self.tsanaclient.save_inference_result(parameters, result['result'])
  
     def state(self, request, model_key):
-        subscription = request.headers.get('apim-subscription-id', 'Official')
-        meta = get_meta(self.config, subscription, model_key)
-        context = json.loads(meta['context'])
-        actual_model_key = context['modelId']
-        state = self.magaclient.state(request, actual_model_key)
-        
-        if state['summary']['status'] == 'RUNNING':
-            model_state = ModelState.TRAINING
-        elif state['summary']['status'] == 'READY':
-            model_state = ModelState.READY
-        elif state['summary']['status'] == 'DELETED':
-            model_state = ModelState.DELETED
-        else:
-            model_state = ModelState.FAILED
-        
-        update_state(self.config, subscription, model_key, model_state, json.dumps(state), None)
+        try:
+            subscription = request.headers.get('apim-subscription-id', 'Official')
+            meta = get_meta(self.config, subscription, model_key)
 
-        return make_response(jsonify(dict(status=STATUS_SUCCESS, modelState=model_state.name, message=json.dumps(state))), 200)
+            if 'context' not in meta:
+                raise Exception(meta['last_error'])
+
+            context = json.loads(meta['context'])
+
+            if 'modelId' not in context:
+                raise Exception(meta['last_error'])
+
+            actual_model_key = context['modelId']
+            state = self.magaclient.state(request, actual_model_key)
+            
+            if state['summary']['status'] == 'RUNNING':
+                model_state = ModelState.TRAINING
+            elif state['summary']['status'] == 'READY':
+                model_state = ModelState.READY
+            elif state['summary']['status'] == 'DELETED':
+                model_state = ModelState.DELETED
+            else:
+                model_state = ModelState.FAILED
+            
+            update_state(self.config, subscription, model_key, model_state, json.dumps(state), None)
+
+            return make_response(jsonify(dict(status=STATUS_SUCCESS, modelState=model_state.name, message=json.dumps(state))), 200)
+        except Exception as e:
+            update_state(self.config, subscription, model_key, ModelState.FAILED, None, str(e))
+            return make_response(jsonify(dict(status=STATUS_FAIL, modelState=ModelState.FAILED.name, message=str(e))), 400)
 
     def delete(self, request, model_key):
-        subscription = request.headers.get('apim-subscription-id', 'Official')
-        meta = get_meta(self.config, subscription, model_key)
-        actual_model_key = meta['context']['modelId']
-        self.magaclient.delete_model(request, actual_model_key)
-        super().delete(request, model_key)
-        return make_response(jsonify(dict(status=STATUS_SUCCESS, message='Model {} has been deleted'.format(model_key))), 200)
+        try:
+            subscription = request.headers.get('apim-subscription-id', 'Official')
+            meta = get_meta(self.config, subscription, model_key)
+
+            if 'context' not in meta:
+                raise Exception(meta['last_error'])
+
+            context = json.loads(meta['context'])
+
+            if 'modelId' not in context:
+                raise Exception(meta['last_error'])
+
+            actual_model_key = context['modelId']
+            self.magaclient.delete_model(request, actual_model_key)
+            super().delete(request, model_key)
+            return make_response(jsonify(dict(status=STATUS_SUCCESS, message='Model {} has been deleted'.format(model_key))), 200)
+        except Exception as e:
+            return make_response(jsonify(dict(status=STATUS_FAIL, message=str(e))), 400)
+        
