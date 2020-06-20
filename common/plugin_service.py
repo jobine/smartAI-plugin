@@ -188,7 +188,7 @@ class PluginService():
         new_para = str(request_body['instance']['params'])
 
         if current_set != new_set or current_para != new_para: 
-            return STATUS_FAIL, 'Inconsistent series sets or params!'
+            return make_response(jsonify(dict(status=STATUS_FAIL, message='Inconsistent series sets or params!')), 400)
 
         log.info('Create inference task')
         timekey = meta['timekey']
