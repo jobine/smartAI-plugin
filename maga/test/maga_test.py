@@ -15,7 +15,7 @@ if __name__ == '__main__':
     #print(response)
 
     response = { 'modelId' : '6a4e3c1c-b2c9-11ea-a98b-da85f6078a2f'}
-    #status = maga_plugin.state(request, response['modelId'])
+    status = maga_plugin.state(request, response['modelId'])
     #print(status)
     
     #inference_result = maga_plugin.inference(request, response['modelId'])

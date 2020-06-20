@@ -240,7 +240,7 @@ class MagaPluginService(PluginService):
         
         update_state(self.config, subscription, model_key, model_state, json.dumps(state), None)
 
-        return make_response(jsonify(dict(status=STATUS_SUCCESS, modelState=model_state, message=json.dumps(state))), 200)
+        return make_response(jsonify(dict(status=STATUS_SUCCESS, modelState=model_state.name, message=json.dumps(state))), 200)
 
     def delete(self, request, model_key):
         subscription = request.headers.get('apim-subscription-id', 'Official')
