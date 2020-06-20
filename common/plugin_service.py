@@ -89,12 +89,12 @@ class PluginService():
             # in the callback, the model will be moved from temp dir to prd dir
             if callback is not None:
                 if result == STATUS_SUCCESS:
-                    callback(subscription, model_key, ModelState.READY, timekey, '')
+                    callback(subscription, model_key, ModelState.READY, timekey, message)
                 else:
                     callback(subscription, model_key, ModelState.FAILED, timekey, message)
         except Exception as e:
             if callback is not None:
-                callback(subscription, model_key, ModelState.FAILED, str(e))
+                callback(subscription, model_key, ModelState.FAILED, timekey, str(e))
         finally:
             shutil.rmtree(model_dir)
         return STATUS_SUCCESS, ''
@@ -117,7 +117,7 @@ class PluginService():
                 callback(subscription, model_key, timekey, STATUS_FAIL, str(e))
         return STATUS_SUCCESS, ''
 
-    def train_callback(self, subscription, model_key, model_state, timekey, last_error=''): 
+    def train_callback(self, subscription, model_key, model_state, timekey, last_error=None):
         log.info("Training callback %s by %s , state = %s", model_key, subscription, model_state)
         meta = get_meta(self.config, subscription, model_key)
         if meta is None or meta['state'] == ModelState.DELETED.name:
@@ -130,14 +130,16 @@ class PluginService():
                 model_state = ModelState.FAILED
                 last_error = 'Model storage failed!'
 
-        return update_state(self.config, subscription, model_key, model_state, last_error)
+        return update_state(self.config, subscription, model_key, model_state, None, last_error)
 
-    def inference_callback(self, subscription, model_key, timekey, result, last_error=''):
+    def inference_callback(self, subscription, model_key, parameters, timekey, result, last_error=None):
         log.info ("inference callback %s by %s , result = %s", model_key, subscription, result)
         if result == STATUS_FAIL: 
             # Inference failed
             # Do a model update
             prepare_model(self.config, subscription, model_key, timekey, True)
+        
+        return self.tsanaclient.save_inference_result(parameters, result['result'])
 
     def train(self, request):
         request_body = json.loads(request.data)
@@ -146,7 +148,11 @@ class PluginService():
         if result != STATUS_SUCCESS:
             return make_response(jsonify(dict(status=STATUS_FAIL, message='Verify failed! ' + message)), 400)
 
-        models_in_train = [model for model in get_model_list(self.config, subscription) if model['inst_id'] == request_body['instance']['instanceId'] and model['state'] == ModelState.TRAINING.name]
+        models_in_train = []
+        for model in get_model_list(self.config, subscription):
+            if 'inst_id' in model and model['inst_id'] == request_body['instance']['instanceId'] and model['state'] == ModelState.TRAINING.name:
+                models_in_train.append(model['model_key'])
+
         if len(models_in_train) >= self.config.models_in_training_limit_per_instance:
             return make_response(jsonify(dict(status=STATUS_FAIL, message='Models in training limit reached! Abort training this time.')), 400)
 
@@ -161,7 +167,7 @@ class PluginService():
         except Exception as e: 
             meta = get_meta(self.config, subscription, model_key)
             if meta is not None and meta['timekey'] == timekey: 
-                update_state(self.config, subscription, model_key, ModelState.FAILED, str(e))
+                update_state(self.config, subscription, model_key, ModelState.FAILED, None, str(e))
             return make_response(jsonify(dict(status=STATUS_FAIL, message='Fail to create new task ' + str(e))), 400)
 
     def inference(self, request, model_key):

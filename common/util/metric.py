@@ -39,7 +39,7 @@ class MetricSender:
 
     def send(self, metric: Metric):
         txt = 'epoch: ' + str(metric.epoch) + '/' + str(metric.epochs) + ', loss: ' + str(metric.loss) + ', validate loss: ' + str(metric.valid_loss)
-        update_state(self.__config, self.__subscription, self.__model_key, None, txt)
+        update_state(self.__config, self.__subscription, self.__model_key, None, None, txt)
         info = {'epochs': metric.epochs, 'epoch': metric.epoch, 'loss': metric.loss, 'val_loss': metric.valid_loss}
         # logger.info("Current metric : {0}".format(json.dumps(info)))
 

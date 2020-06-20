@@ -53,7 +53,7 @@ def get_meta(config, subscription, model_key):
 # Return:
 #   result: STATUS_SUCCESS / STATUS_FAIL
 #   message: description for the result 
-def update_state(config, subscription, model_key, state:ModelState=None, last_error:str=None): 
+def update_state(config, subscription, model_key, state:ModelState=None, context:str=None, last_error:str=None): 
     azure_table = AzureTable(config.az_storage_account, config.az_storage_account_key)
     meta = get_meta(config, subscription, model_key)
     if meta == None or meta['state'] == ModelState.DELETED.name:
@@ -61,6 +61,9 @@ def update_state(config, subscription, model_key, state:ModelState=None, last_er
 
     if state is not None:
         meta['state'] = state.name
+
+    if context is not None:
+        meta['context'] = context
 
     if last_error is not None:
         meta['last_error'] = last_error
@@ -113,6 +116,6 @@ def clear_state_when_necessary(config, subscription, model_key, entity):
             # The owner is dead, then
             # Fix the state
             entity['state'] = ModelState.FAILED.name
-            update_state(config, subscription, model_key, ModelState.FAILED, 'Training job dead')
+            update_state(config, subscription, model_key, ModelState.FAILED, None, 'Training job dead')
                 
     return entity
