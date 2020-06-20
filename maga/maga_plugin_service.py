@@ -79,7 +79,7 @@ class MagaPluginService(PluginService):
         resultId = result['resultId']
         while True:
             result = self.magaclient.get_result(request, resultId)
-            if result['statusSummary']['status'] == 'READY':
+            if result['statusSummary']['status'] == 'READY' or result['statusSummary']['status'] == 'FAILED':
                 break
             else:
                 time.sleep(5)
