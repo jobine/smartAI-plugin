@@ -17,6 +17,7 @@ from common.util.monitor import init_monitor, run_monitor, stop_monitor
 
 from common.tsanaclient import TSANAClient
 
+import logging
 from telemetry import log
 from os import environ
 import yaml
@@ -35,6 +36,9 @@ loop = asyncio.new_event_loop()
 
 #monitor infras
 sched = BackgroundScheduler()
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 def load_config(path):
     try:

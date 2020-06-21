@@ -7,9 +7,13 @@ from flask_restful import Resource, Api
 from common.plugin_service import PluginService
 from common.util.constant import STATUS_SUCCESS, STATUS_FAIL
 
+import logging
+
 app = Flask(__name__)
 api = Api(app)
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 def try_except(fn):
     def wrapped(*args, **kwargs):
@@ -29,13 +33,24 @@ def index():
 def before_request():
     g.start = time.time()
 
-
 @app.after_request
 def after_request(response):
     total_time = (time.time() - g.start) * 1e6
     rule = str(request.url_rule)
     status = str(response.status_code)
     # TODO log here
+    request_log = '\nRequest begin-----------------------------'
+    request_log += '\n'
+    request_log += '  url: ' + str(request.url)
+    request_log += '\n'
+    request_log += '  body: ' + str(request.data)
+    request_log += '\n'
+    request_log += '  response status: ' + str(response.status)
+    request_log += '\n'
+    request_log += '  response data: ' + str(response.data)
+    request_log += '\n'
+    request_log += 'Request end-----------------------------'
+    log.info(request_log)
     return response
 
 class PluginModelIndexAPI(Resource):
