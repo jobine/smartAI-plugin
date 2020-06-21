@@ -13,9 +13,9 @@ from common.plugin_model_api import api, PluginModelAPI, PluginModelListAPI, Plu
 forecast = ForecastPluginService()
 
 api.add_resource(PluginModelListAPI, '/forecast/models', resource_class_kwargs={'plugin_service': forecast})
-api.add_resource(PluginModelAPI, '/forecast/models/<model_key>', resource_class_kwargs={'plugin_service': forecast})
+api.add_resource(PluginModelAPI, '/forecast/models/<model_id>', resource_class_kwargs={'plugin_service': forecast})
 api.add_resource(PluginModelTrainAPI, '/forecast/models/train', resource_class_kwargs={'plugin_service': forecast})
-api.add_resource(PluginModelInferenceAPI, '/forecast/models/<model_key>/inference', resource_class_kwargs={'plugin_service': forecast})
+api.add_resource(PluginModelInferenceAPI, '/forecast/models/<model_id>/inference', resource_class_kwargs={'plugin_service': forecast})
 api.add_resource(PluginModelParameterAPI, '/forecast/parameters', resource_class_kwargs={'plugin_service': forecast})
 
 if __name__ == '__main__':

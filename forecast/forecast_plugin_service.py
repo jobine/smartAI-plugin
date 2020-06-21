@@ -29,7 +29,7 @@ class ForecastPluginService(PluginService):
     def do_verify(self, subscription, parameters):
         # ------TO BE REPLACED: Other application just replace below part-------
         # For forecast, check the factors and target has same granularity, and each factor could only contain one series
-        meta = self.tsanaclient.get_metric_meta(parameters['instance']['params']['target']['metricId'])
+        meta = self.tsanaclient.get_metric_meta(parameters['apiKey'], parameters['instance']['params']['target']['metricId'])
         if meta is None: 
             return STATUS_FAIL, 'Target is not found. '
         target_gran = meta['granularityName']
@@ -49,7 +49,7 @@ class ForecastPluginService(PluginService):
             
             dt = dt_to_str(str_to_dt(meta['dataStartFrom']))
             para = dict(metricId=data['metricId'], dimensions=dim, count=2, startTime=dt)     # Let's said 100 is your limitation
-            ret = self.tsanaclient.post('/metrics/' + data['metricId'] + '/rank-series', data=para)
+            ret = self.tsanaclient.post(parameters['apiKey'], '/metrics/' + data['metricId'] + '/rank-series', data=para)
             if ret is None or 'value' not in ret:
                 return STATUS_FAIL, 'Read series rank filed. '
             seriesCount += len(ret['value'])
@@ -58,9 +58,9 @@ class ForecastPluginService(PluginService):
 
         return STATUS_SUCCESS, ''
             
-    def do_train(self, subscription, model_key, model_dir, parameters):
+    def do_train(self, subscription, model_id, model_dir, parameters):
         inference_window = parameters['instance']['params']['windowSize']
-        meta = self.tsanaclient.get_metric_meta(parameters['instance']['params']['target']['metricId'])
+        meta = self.tsanaclient.get_metric_meta(parameters['apiKey'], parameters['instance']['params']['target']['metricId'])
         if meta is None:
             raise Exception('Metric is not found.')
 
@@ -79,13 +79,13 @@ class ForecastPluginService(PluginService):
                                         - inference_window - backwindow)
 
         factor_def = parameters['seriesSets']
-        factors_data = self.tsanaclient.get_timeseries(factor_def, start_time_train, data_end_time)
+        factors_data = self.tsanaclient.get_timeseries(parameters['apiKey'], factor_def, start_time_train, data_end_time)
         
         target_def = [parameters['instance']['params']['target']]
         offset = 0
         if 'target_offset' in parameters['instance']['params']:
             offset = int(parameters['instance']['params']['target_offset'])
-        target_data = self.tsanaclient.get_timeseries(target_def, start_time_train, data_end_time, offset, meta['granularityName'],
+        target_data = self.tsanaclient.get_timeseries(parameters['apiKey'], target_def, start_time_train, data_end_time, offset, meta['granularityName'],
                                     meta['granularityAmount'])
         
         if factors_data is None or target_data is None:
@@ -100,7 +100,7 @@ class ForecastPluginService(PluginService):
                                             gran=Gran[meta['granularityName']],
                                             custom_in_seconds=meta['granularityAmount'],
                                             max_cores=2,
-                                            metric_sender=MetricSender(self.config, subscription, model_key),
+                                            metric_sender=MetricSender(self.config, subscription, model_id),
                                             epoc=parameters['instance']['params']['epoc'] if 'epoc' in
                                                                                                         parameters[
                                                                                                             'instance'][
@@ -137,10 +137,10 @@ class ForecastPluginService(PluginService):
         # Need to call callback
         return STATUS_SUCCESS, ''
 
-    def do_inference(self, subscription, model_key, model_dir, parameters):
+    def do_inference(self, subscription, model_id, model_dir, parameters):
         log.info("Start to inference %s", model_dir)
         inference_window = parameters['instance']['params']['windowSize']
-        meta = self.tsanaclient.get_metric_meta(parameters['instance']['params']['target']['metricId'])
+        meta = self.tsanaclient.get_metric_meta(parameters['apiKey'], parameters['instance']['params']['target']['metricId'])
         if meta is None: 
             return STATUS_FAIL, 'Metric is not found. '
         end_time = str_to_dt(parameters['endTime'])
@@ -158,14 +158,14 @@ class ForecastPluginService(PluginService):
 
 
         factor_def = parameters['seriesSets']
-        factors_data = self.tsanaclient.get_timeseries(factor_def, data_start_time, data_end_time)
+        factors_data = self.tsanaclient.get_timeseries(parameters['apiKey'], factor_def, data_start_time, data_end_time)
 
         target_def = [parameters['instance']['params']['target']]
-        target_data = self.tsanaclient.get_timeseries(target_def, data_start_time, data_end_time)
+        target_data = self.tsanaclient.get_timeseries(parameters['apiKey'], target_def, data_start_time, data_end_time)
 
         model, window = load_inference_model(model_dir=model_dir, target_size=parameters['instance']['params']['step'],
                             window=inference_window, 
-                            metric_sender=MetricSender(self.config, subscription, model_key), 
+                            metric_sender=MetricSender(self.config, subscription, model_id), 
                             epoc=parameters['instance']['params']['epoc'] if 'epoc' in
                                                                                                 parameters[
                                                                                                     'instance'][
@@ -213,4 +213,4 @@ class ForecastPluginService(PluginService):
             
             cur_time = get_time_offset(cur_time, (meta['granularityName'], meta['granularityAmount']),
                                                             + 1)
-        return STATUS_SUCCESS, '', ''
+        return STATUS_SUCCESS, ''

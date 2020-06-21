@@ -35,44 +35,44 @@ class MagaPluginService(PluginService):
     def do_verify(self, subscription, parameters):
         return STATUS_SUCCESS, ''
 
-    def do_train(self, subscription, model_key, model_dir, parameters):
+    def do_train(self, subscription, model_id, model_dir, parameters):
         request = Request()
         request.headers['apim-subscription-id'] = subscription
         request.data = self.prepare_training_data(parameters)
         result = self.magaclient.train(request)
         if 'modelId' in result:
-            update_state(self.config, subscription, model_key, ModelState.TRAINING, json.dumps(result), None)
+            update_state(self.config, subscription, model_id, ModelState.TRAINING, json.dumps(result), None)
 
             while True:
                 state = self.magaclient.state(request, result['modelId'])
                 if state['summary']['status'] != 'CREATED' and state['summary']['status'] != 'RUNNING':
                     break
                 else:
-                    update_state(self.config, subscription, model_key, ModelState.TRAINING, json.dumps(state), None)
+                    update_state(self.config, subscription, model_id, ModelState.TRAINING, json.dumps(state), None)
                     time.sleep(5)
             
             if state['summary']['status'] == 'READY':
-                update_state(self.config, subscription, model_key, ModelState.READY, json.dumps(state), None)
+                update_state(self.config, subscription, model_id, ModelState.READY, json.dumps(state), None)
                 return STATUS_SUCCESS, json.dumps(state)
             else:
-                update_state(self.config, subscription, model_key, ModelState.FAILED, json.dumps(state), None)
+                update_state(self.config, subscription, model_id, ModelState.FAILED, json.dumps(state), None)
                 return STATUS_FAIL, json.dumps(state)
         else:
-            update_state(self.config, subscription, model_key, ModelState.FAILED, json.dumps(result), result['message'])
+            update_state(self.config, subscription, model_id, ModelState.FAILED, json.dumps(result), result['message'])
             return STATUS_FAIL, result['message']
 
-    def do_state(self, subscription, model_key):
+    def do_state(self, subscription, model_id):
         return STATUS_SUCCESS, ''
 
-    def do_inference(self, subscription, model_key, model_dir, parameters):
+    def do_inference(self, subscription, model_id, model_dir, parameters):
         request = Request()
         request.headers['apim-subscription-id'] = subscription
         request.data = self.prepare_inference_data(parameters)
         
-        meta = get_meta(self.config, subscription, model_key)
+        meta = get_meta(self.config, subscription, model_id)
         context = json.loads(meta['context'])
-        actual_model_key = context['modelId']
-        result = self.magaclient.inference(request, actual_model_key)
+        actual_model_id = context['modelId']
+        result = self.magaclient.inference(request, actual_model_id)
         if not result['resultId']:
             raise Exception(result['errorMessage'])
         
@@ -86,7 +86,7 @@ class MagaPluginService(PluginService):
 
         return STATUS_SUCCESS, result
 
-    def do_delete(self, subscription, model_key):
+    def do_delete(self, subscription, model_id):
         return STATUS_SUCCESS, ''
 
     def prepare_training_data(self, parameters):
@@ -97,7 +97,7 @@ class MagaPluginService(PluginService):
             start_time = end_time
 
         factor_def = parameters['seriesSets']
-        factors_data = self.tsanaclient.get_timeseries(factor_def, start_time, end_time)
+        factors_data = self.tsanaclient.get_timeseries(parameters['apiKey'], factor_def, start_time, end_time)
 
         time_key = dt_to_str_file_name(end_time)
         data_dir = os.path.join(self.config.model_data_dir, time_key, str(uuid.uuid1()))
@@ -152,7 +152,7 @@ class MagaPluginService(PluginService):
             start_time = end_time
 
         factor_def = parameters['seriesSets']
-        factors_data = self.tsanaclient.get_timeseries(factor_def, start_time, end_time)
+        factors_data = self.tsanaclient.get_timeseries(parameters['apiKey'], factor_def, start_time, end_time)
 
         time_key = dt_to_str_file_name(end_time)
         data_dir = os.path.join(self.config.model_data_dir, time_key, str(uuid.uuid1()))
@@ -193,39 +193,39 @@ class MagaPluginService(PluginService):
         finally:
             shutil.rmtree(data_dir, ignore_errors=True)        
 
-    def inference_wrapper(self, subscription, model_key, parameters, timekey, callback): 
-        log.info("Start inference wrapper %s by %s ", model_key, subscription)
+    def inference_wrapper(self, subscription, model_id, parameters, timekey, callback): 
+        log.info("Start inference wrapper %s by %s ", model_id, subscription)
         try:
             result = {}
-            prd_dir = os.path.join(self.config.model_temp_dir, subscription + '_' + model_key)
-            status, result = self.do_inference(subscription, model_key, prd_dir, parameters)
+            prd_dir = os.path.join(self.config.model_temp_dir, subscription + '_' + model_id)
+            status, result = self.do_inference(subscription, model_id, prd_dir, parameters)
 
             # TODO: Write the result back
             log.info("Inference result here: %s" % result)
             if callback is not None:
-                callback(subscription, model_key, parameters, timekey, result)    
+                callback(subscription, model_id, parameters, timekey, result)    
         except Exception as e:
             if callback is not None:
-                callback(subscription, model_key, parameters, timekey, result, str(e))
+                callback(subscription, model_id, parameters, timekey, result, str(e))
 
         return STATUS_SUCCESS, ''
 
-    def train_callback(self, subscription, model_key, model_state, timekey, last_error=None):
-        log.info("Training callback %s by %s , state = %s", model_key, subscription, model_state)
-        meta = get_meta(self.config, subscription, model_key)
+    def train_callback(self, subscription, model_id, model_state, timekey, last_error=None):
+        log.info("Training callback %s by %s , state = %s", model_id, subscription, model_state)
+        meta = get_meta(self.config, subscription, model_id)
         if meta is None or meta['state'] == ModelState.DELETED.name:
             return STATUS_FAIL, 'Model is not found! '
 
-        return update_state(self.config, subscription, model_key, model_state, None, last_error)
+        return update_state(self.config, subscription, model_id, model_state, None, last_error)
 
-    def inference_callback(self, subscription, model_key, parameters, timekey, result, last_error=None):
-        log.info ("inference callback %s by %s, result = %s", model_key, subscription, result)
+    def inference_callback(self, subscription, model_id, parameters, timekey, result, last_error=None):
+        log.info ("inference callback %s by %s, result = %s", model_id, subscription, result)
         return self.tsanaclient.save_inference_result(parameters, result['result'])
  
-    def state(self, request, model_key):
+    def state(self, request, model_id):
         try:
             subscription = request.headers.get('apim-subscription-id', 'Official')
-            meta = get_meta(self.config, subscription, model_key)
+            meta = get_meta(self.config, subscription, model_id)
 
             if 'context' not in meta:
                 raise Exception(meta['last_error'])
@@ -235,8 +235,8 @@ class MagaPluginService(PluginService):
             if 'modelId' not in context:
                 raise Exception(meta['last_error'])
 
-            actual_model_key = context['modelId']
-            state = self.magaclient.state(request, actual_model_key)
+            actual_model_id = context['modelId']
+            state = self.magaclient.state(request, actual_model_id)
             
             if state['summary']['status'] == 'RUNNING':
                 model_state = ModelState.TRAINING
@@ -247,17 +247,16 @@ class MagaPluginService(PluginService):
             else:
                 model_state = ModelState.FAILED
             
-            update_state(self.config, subscription, model_key, model_state, json.dumps(state), None)
-
-            return make_response(jsonify(dict(status=STATUS_SUCCESS, modelState=model_state.name, message=json.dumps(state))), 200)
+            update_state(self.config, subscription, model_id, model_state, json.dumps(state), None)
+            return make_response(jsonify(dict(instanceId='', modelId=model_id, result=STATUS_SUCCESS, message=json.dumps(state), modelState=model_state.name)), 200)
         except Exception as e:
-            update_state(self.config, subscription, model_key, ModelState.FAILED, None, str(e))
-            return make_response(jsonify(dict(status=STATUS_FAIL, modelState=ModelState.FAILED.name, message=str(e))), 400)
+            update_state(self.config, subscription, model_id, ModelState.FAILED, None, str(e))
+            return make_response(jsonify(dict(instanceId='', modelId=model_id, result=STATUS_FAIL, message=str(e), modelState=ModelState.FAILED.name)), 400)
 
-    def delete(self, request, model_key):
+    def delete(self, request, model_id):
         try:
             subscription = request.headers.get('apim-subscription-id', 'Official')
-            meta = get_meta(self.config, subscription, model_key)
+            meta = get_meta(self.config, subscription, model_id)
 
             if 'context' not in meta:
                 raise Exception(meta['last_error'])
@@ -267,10 +266,10 @@ class MagaPluginService(PluginService):
             if 'modelId' not in context:
                 raise Exception(meta['last_error'])
 
-            actual_model_key = context['modelId']
-            self.magaclient.delete_model(request, actual_model_key)
-            super().delete(request, model_key)
-            return make_response(jsonify(dict(status=STATUS_SUCCESS, message='Model {} has been deleted'.format(model_key))), 200)
+            actual_model_id = context['modelId']
+            self.magaclient.delete_model(request, actual_model_id)
+            super().delete(request, model_id)
+            return make_response(jsonify(dict(instanceId='', modelId=model_id, result=STATUS_SUCCESS, message='Model {} has been deleted'.format(model_id), modelState=ModelState.DELETED.name)), 200)
         except Exception as e:
-            return make_response(jsonify(dict(status=STATUS_FAIL, message=str(e))), 400)
+            return make_response(jsonify(dict(instanceId='', modelId=model_id, result=STATUS_FAIL, message=str(e), modelState=ModelState.FAILED.name)), 400)
         

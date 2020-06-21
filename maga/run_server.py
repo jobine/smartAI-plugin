@@ -12,9 +12,9 @@ from common.plugin_model_api import api, PluginModelAPI, PluginModelListAPI, Plu
 multivariate = MagaPluginService()
 
 api.add_resource(PluginModelListAPI, '/multivariate/models', resource_class_kwargs={'plugin_service': multivariate})
-api.add_resource(PluginModelAPI, '/multivariate/models/<model_key>', resource_class_kwargs={'plugin_service': multivariate})
+api.add_resource(PluginModelAPI, '/multivariate/models/<model_id>', resource_class_kwargs={'plugin_service': multivariate})
 api.add_resource(PluginModelTrainAPI, '/multivariate/models/train', resource_class_kwargs={'plugin_service': multivariate})
-api.add_resource(PluginModelInferenceAPI, '/multivariate/models/<model_key>/inference', resource_class_kwargs={'plugin_service': multivariate})
+api.add_resource(PluginModelInferenceAPI, '/multivariate/models/<model_id>/inference', resource_class_kwargs={'plugin_service': multivariate})
 api.add_resource(PluginModelParameterAPI, '/multivariate/parameters', resource_class_kwargs={'plugin_service': multivariate})
 
 if __name__ == '__main__':

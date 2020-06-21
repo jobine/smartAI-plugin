@@ -21,7 +21,7 @@ def try_except(fn):
             return fn(*args, **kwargs)
         except Exception as e:
             log.error("-----Exception-----")
-            return make_response(jsonify(dict(status=STATUS_FAIL, message='Unknown error, please check your request. ' + str(e))), 502)
+            return make_response(jsonify(dict(result=STATUS_FAIL, message='Unknown error, please check your request. ' + str(e))), 502)
     return wrapped
 
 @app.route('/', methods=['GET'])
@@ -64,20 +64,20 @@ class PluginModelAPI(Resource):  # The API class that handles a single user
         self.__plugin_service = plugin_service
 
     @try_except
-    def get(self, model_key):
-        return self.__plugin_service.state(request, model_key)
+    def get(self, model_id):
+        return self.__plugin_service.state(request, model_id)
 
     @try_except
-    def post(self, model_key):
+    def post(self, model_id):
         pass
 
     @try_except
-    def put(self, model_key):
+    def put(self, model_id):
         pass
 
     @try_except
-    def delete(self, model_key):
-        return self.__plugin_service.delete(request, model_key)
+    def delete(self, model_id):
+        return self.__plugin_service.delete(request, model_id)
 
 
 class PluginModelTrainAPI(Resource):
@@ -94,8 +94,8 @@ class PluginModelInferenceAPI(Resource):
         self.__plugin_service = plugin_service
 
     @try_except
-    def post(self, model_key):
-        return self.__plugin_service.inference(request, model_key)
+    def post(self, model_id):
+        return self.__plugin_service.inference(request, model_id)
 
 
 class PluginModelParameterAPI(Resource):
@@ -103,8 +103,8 @@ class PluginModelParameterAPI(Resource):
         self.__plugin_service = plugin_service
 
     @try_except
-    def post(self, model_key):
-        return self.__plugin_service.verify(request, model_key)
+    def post(self, model_id):
+        return self.__plugin_service.verify(request, model_id)
 
 
 class PluginModelListAPI(Resource):
