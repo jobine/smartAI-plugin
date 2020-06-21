@@ -14,18 +14,17 @@ REQUEST_TIMEOUT_SECONDS = 30
 
 
 class TSANAClient(object):
-    def __init__(self, endpoint, api_key, series_limit, username=None, password=None, retrycount=3, retryinterval=1000):
+    def __init__(self, endpoint, series_limit, username=None, password=None, retrycount=3, retryinterval=1000):
         self.endpoint = endpoint
-        self.api_key = api_key
         self.series_limit = series_limit
         self.username = username
         self.password = password
         self.retryrequests = RetryRequests(retrycount, retryinterval)
 
-    def post(self, path, data):
+    def post(self, api_key, path, data):
         url = self.endpoint + path
         headers = {
-            "x-api-key": self.api_key,
+            "x-api-key": api_key,
             "Content-Type": "application/json"
         }
 
@@ -37,14 +36,15 @@ class TSANAClient(object):
         try:
             r = self.retryrequests.post(url=url, headers=headers, auth=auth, data=json.dumps(data),
                                         timeout=REQUEST_TIMEOUT_SECONDS, verify=False)
-            return r.json()
+            if r.status_code != 204:
+                return r.json()
         except Exception as e:
             raise Exception('TSANA service api "{}" failed, request:{}, {}'.format(path, data, str(e)))
 
-    def get(self, path):
+    def get(self, api_key, path):
         url = self.endpoint + path
         headers = {
-            "x-api-key": self.api_key,
+            "x-api-key": api_key,
             "Content-Type": "application/json"
         }
 
@@ -66,11 +66,11 @@ class TSANAClient(object):
     #   metric_id: a UUID string
     # Return:
     #   meta: the meta of the specified metric, or None if there is something wrong. 
-    def get_metric_meta(self, metric_id):
-        return self.get('/metrics/' + metric_id + '/meta')
+    def get_metric_meta(self, api_key, metric_id):
+        return self.get(api_key, '/metrics/' + metric_id + '/meta')
 
-    def get_dimesion_values(self, metric_id, dimension_name):
-        dims = self.get('/metrics/' + metric_id + '/dimensions')
+    def get_dimesion_values(self, api_key, metric_id, dimension_name):
+        dims = self.get(api_key, '/metrics/' + metric_id + '/dimensions')
         if 'dimensions' in dims and dimension_name in dims['dimensions']:
             return dims['dimensions'][dimension_name]
         else:
@@ -87,7 +87,7 @@ class TSANAClient(object):
     #   granularityAmount: if granularityName is Custom, granularityAmount is the seconds of the exact granularity
     # Return: 
     #   A array of Series object
-    def get_timeseries(self, series_sets, start_time, end_time, offset=0, granularityName=None, granularityAmount=0,
+    def get_timeseries(self, api_key, series_sets, start_time, end_time, offset=0, granularityName=None, granularityAmount=0,
                        top=1):
         if offset != 0 and granularityName is None:
             offset = 0
@@ -107,7 +107,7 @@ class TSANAClient(object):
                 dim[dimkey] = [data['dimensionFilter'][dimkey]]
 
             para = dict(metricId=data['metricId'], dimensions=dim, count=top, startTime=start_str)
-            ret = self.post('/metrics/' + data['metricId'] + '/rank-series', data=para)
+            ret = self.post(api_key, '/metrics/' + data['metricId'] + '/rank-series', data=para)
             for s in ret['value']:
                 if s['seriesId'] not in dedup:
                     s['startTime'] = start_str
@@ -120,7 +120,7 @@ class TSANAClient(object):
         # Query the data
         multi_series_data = None
         if len(series) > 0:
-            ret = self.post('/metrics/series/data', data=dict(value=series))
+            ret = self.post(api_key, '/metrics/series/data', data=dict(value=series))
             if granularityName is not None:
                 multi_series_data = [
                     Series(factor['id']['metricId'], factor['id']['seriesId'], factor['id']['dimension'],
@@ -173,7 +173,7 @@ class TSANAClient(object):
                     'createdTime': dt_to_str(datetime.datetime.now())
                 })
 
-            self.post('/timeSeriesGroups/' + parameters['groupId'] + '/appInstances/' + parameters['instance']['instanceId'] + '/saveResult', body)
+            self.post(parameters['apiKey'], '/timeSeriesGroups/' + parameters['groupId'] + '/appInstances/' + parameters['instance']['instanceId'] + '/saveResult', body)
             return STATUS_SUCCESS, ''
         except Exception as e: 
             traceback.print_exc(file=sys.stdout)
@@ -202,7 +202,7 @@ class TSANAClient(object):
             }
             print(json.dumps(body))
 
-            self.post('/pushData', body)
+            self.post(parameters['apiKey'], '/pushData', body)
             return STATUS_SUCCESS, ''
         except Exception as e: 
             traceback.print_exc(file=sys.stdout)
@@ -211,7 +211,7 @@ class TSANAClient(object):
 
     def get_inference_result(self, parameters, start_time, end_time):
         try: 
-            ret = self.get('/timeSeriesGroups/' 
+            ret = self.get(parameters['apiKey'], '/timeSeriesGroups/' 
                                 + parameters['groupId'] 
                                 + '/appInstances/' 
                                 + parameters['instance']['instanceId'] 

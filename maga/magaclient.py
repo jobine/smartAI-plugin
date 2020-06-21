@@ -24,7 +24,8 @@ class MAGAClient(object):
         try:
             r = retryrequests.post(url=url, headers=headers, auth=auth, data=json.dumps(data),
                                    timeout=REQUEST_TIMEOUT_SECONDS, verify=False)
-            return r.json()
+            if r.status_code != 204:
+                return r.json()
         except Exception as e:
             raise Exception('MAGA service api "{}" failed, request:{}, {}'.format(path, data, str(e)))
 
@@ -59,17 +60,17 @@ class MAGAClient(object):
     def train(self, request):
         return self.post('/multivariate/models', request.data, request.headers.get('apim-subscription-id', 'Official'))
 
-    def inference(self, request, model_key):
-        return self.post('/multivariate/models/' + model_key + '/detect', request.data, request.headers.get('apim-subscription-id', 'Official'))
+    def inference(self, request, model_id):
+        return self.post('/multivariate/models/' + model_id + '/detect', request.data, request.headers.get('apim-subscription-id', 'Official'))
 
-    def state(self, request, model_key):
-        return self.get('/multivariate/models/' + model_key, request.headers.get('apim-subscription-id', 'Official'))
+    def state(self, request, model_id):
+        return self.get('/multivariate/models/' + model_id, request.headers.get('apim-subscription-id', 'Official'))
 
     def list_models(self, request):
         return self.get('/multivariate/models', request.headers.get('apim-subscription-id', 'Official'))
 
-    def delete_model(self, request, model_key):
-        return self.delete('/multivariate/models/' + model_key, request.headers.get('apim-subscription-id', 'Official'))
+    def delete_model(self, request, model_id):
+        return self.delete('/multivariate/models/' + model_id, request.headers.get('apim-subscription-id', 'Official'))
 
     def get_result(self, request, result_id):
         return self.get('/multivariate/results/' + result_id, request.headers.get('apim-subscription-id', 'Official'))
