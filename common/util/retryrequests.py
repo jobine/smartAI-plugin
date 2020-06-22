@@ -44,6 +44,21 @@ class RetryRequests(object):
                 else:
                     raise e
 
+    def put(self, *args, **kwargs):
+        for n in range(self.count - 1, -1, -1):
+            try:
+                session = requests.Session()
+                r = session.put(*args, **kwargs)
+                if not 100 <= r.status_code < 300:
+                    raise CommonException('statuscode: {}, message: {}'.format(r.status_code, r.content))
+                return r
+            except (CommonException, requests.exceptions.RequestException) as e:
+                session.close()
+                if n > 0:
+                    time.sleep(self.interval * 0.001)
+                else:
+                    raise e
+
     def delete(self, *args, **kwargs):
         for n in range(self.count - 1, -1, -1):
             try:

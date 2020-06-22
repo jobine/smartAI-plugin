@@ -22,7 +22,7 @@ def insert_meta(config, subscription, model_key, meta):
             inst_name=meta['instance']['instanceName'], 
             inst_id=meta['instance']['instanceId'], 
             para=str(meta['instance']['params']),
-            state=ModelState.TRAINING.name,
+            state=ModelState.Training.name,
             timekey=time.time())
 
 # Get a model entity from meta
@@ -56,7 +56,7 @@ def get_meta(config, subscription, model_key):
 def update_state(config, subscription, model_key, state:ModelState=None, context:str=None, last_error:str=None): 
     azure_table = AzureTable(config.az_storage_account, config.az_storage_account_key)
     meta = get_meta(config, subscription, model_key)
-    if meta == None or meta['state'] == ModelState.DELETED.name:
+    if meta == None or meta['state'] == ModelState.Deleted.name:
         return STATUS_FAIL, 'Model is not found!'
 
     if state is not None:

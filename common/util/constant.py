@@ -1,15 +1,15 @@
 import enum
 
 class ModelState(enum.Enum):
-    TRAINING = 1
-    READY = 2
-    DELETED = 3
-    FAILED = 4
+    Training = 1
+    Ready = 2
+    Deleted = 3
+    Failed = 4
 
 class InferenceState(enum.Enum):
-    PENDING = 1
-    SUCCESS = 2
-    FAIL = 3
+    Pending = 1
+    Success = 2
+    Fail = 3
 
 STATUS_SUCCESS = 'Success'
 STATUS_FAIL = 'Fail'

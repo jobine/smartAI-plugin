@@ -41,24 +41,24 @@ class MagaPluginService(PluginService):
         request.data = self.prepare_training_data(parameters)
         result = self.magaclient.train(request)
         if 'modelId' in result:
-            update_state(self.config, subscription, model_id, ModelState.TRAINING, json.dumps(result), None)
+            update_state(self.config, subscription, model_id, ModelState.Training, json.dumps(result), None)
 
             while True:
                 state = self.magaclient.state(request, result['modelId'])
                 if state['summary']['status'] != 'CREATED' and state['summary']['status'] != 'RUNNING':
                     break
                 else:
-                    update_state(self.config, subscription, model_id, ModelState.TRAINING, json.dumps(state), None)
+                    update_state(self.config, subscription, model_id, ModelState.Training, json.dumps(state), None)
                     time.sleep(5)
             
             if state['summary']['status'] == 'READY':
-                update_state(self.config, subscription, model_id, ModelState.READY, json.dumps(state), None)
+                update_state(self.config, subscription, model_id, ModelState.Ready, json.dumps(state), None)
                 return STATUS_SUCCESS, json.dumps(state)
             else:
-                update_state(self.config, subscription, model_id, ModelState.FAILED, json.dumps(state), None)
+                update_state(self.config, subscription, model_id, ModelState.Failed, json.dumps(state), None)
                 return STATUS_FAIL, json.dumps(state)
         else:
-            update_state(self.config, subscription, model_id, ModelState.FAILED, json.dumps(result), result['message'])
+            update_state(self.config, subscription, model_id, ModelState.Failed, json.dumps(result), result['message'])
             return STATUS_FAIL, result['message']
 
     def do_state(self, subscription, model_id):
@@ -194,7 +194,7 @@ class MagaPluginService(PluginService):
             shutil.rmtree(data_dir, ignore_errors=True)        
 
     def inference_wrapper(self, subscription, model_id, parameters, timekey, callback): 
-        log.info("Start inference wrapper %s by %s ", model_id, subscription)
+        log.info("Start inference wrapper %s by %s " % (model_id, subscription))
         try:
             result = {}
             prd_dir = os.path.join(self.config.model_temp_dir, subscription + '_' + model_id)
@@ -210,16 +210,17 @@ class MagaPluginService(PluginService):
 
         return STATUS_SUCCESS, ''
 
-    def train_callback(self, subscription, model_id, model_state, timekey, last_error=None):
-        log.info("Training callback %s by %s , state = %s", model_id, subscription, model_state)
+    def train_callback(self, subscription, model_id, parameters, model_state, timekey, last_error=None):
+        log.info("Training callback %s by %s , state = %s" % (model_id, subscription, model_state))
         meta = get_meta(self.config, subscription, model_id)
-        if meta is None or meta['state'] == ModelState.DELETED.name:
+        if meta is None or meta['state'] == ModelState.Deleted.name:
             return STATUS_FAIL, 'Model is not found! '
 
-        return update_state(self.config, subscription, model_id, model_state, None, last_error)
+        update_state(self.config, subscription, model_id, model_state, None, last_error)
+        return self.tsanaclient.save_training_result(parameters, model_id, model_state.name, last_error)
 
     def inference_callback(self, subscription, model_id, parameters, timekey, result, last_error=None):
-        log.info ("inference callback %s by %s, result = %s", model_id, subscription, result)
+        log.info ("inference callback %s by %s, result = %s" % (model_id, subscription, result))
         return self.tsanaclient.save_inference_result(parameters, result['result'])
  
     def state(self, request, model_id):
@@ -239,19 +240,19 @@ class MagaPluginService(PluginService):
             state = self.magaclient.state(request, actual_model_id)
             
             if state['summary']['status'] == 'RUNNING':
-                model_state = ModelState.TRAINING
+                model_state = ModelState.Training
             elif state['summary']['status'] == 'READY':
-                model_state = ModelState.READY
+                model_state = ModelState.Ready
             elif state['summary']['status'] == 'DELETED':
-                model_state = ModelState.DELETED
+                model_state = ModelState.Deleted
             else:
-                model_state = ModelState.FAILED
+                model_state = ModelState.Failed
             
             update_state(self.config, subscription, model_id, model_state, json.dumps(state), None)
             return make_response(jsonify(dict(instanceId='', modelId=model_id, result=STATUS_SUCCESS, message=json.dumps(state), modelState=model_state.name)), 200)
         except Exception as e:
-            update_state(self.config, subscription, model_id, ModelState.FAILED, None, str(e))
-            return make_response(jsonify(dict(instanceId='', modelId=model_id, result=STATUS_FAIL, message=str(e), modelState=ModelState.FAILED.name)), 400)
+            update_state(self.config, subscription, model_id, ModelState.Failed, None, str(e))
+            return make_response(jsonify(dict(instanceId='', modelId=model_id, result=STATUS_FAIL, message=str(e), modelState=ModelState.Failed.name)), 400)
 
     def delete(self, request, model_id):
         try:
@@ -269,7 +270,7 @@ class MagaPluginService(PluginService):
             actual_model_id = context['modelId']
             self.magaclient.delete_model(request, actual_model_id)
             super().delete(request, model_id)
-            return make_response(jsonify(dict(instanceId='', modelId=model_id, result=STATUS_SUCCESS, message='Model {} has been deleted'.format(model_id), modelState=ModelState.DELETED.name)), 200)
+            return make_response(jsonify(dict(instanceId='', modelId=model_id, result=STATUS_SUCCESS, message='Model {} has been deleted'.format(model_id), modelState=ModelState.Deleted.name)), 200)
         except Exception as e:
-            return make_response(jsonify(dict(instanceId='', modelId=model_id, result=STATUS_FAIL, message=str(e), modelState=ModelState.FAILED.name)), 400)
+            return make_response(jsonify(dict(instanceId='', modelId=model_id, result=STATUS_FAIL, message=str(e), modelState=ModelState.Failed.name)), 400)
         

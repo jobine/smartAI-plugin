@@ -41,6 +41,26 @@ class TSANAClient(object):
         except Exception as e:
             raise Exception('TSANA service api "{}" failed, request:{}, {}'.format(path, data, str(e)))
 
+    def put(self, api_key, path, data):
+        url = self.endpoint + path
+        headers = {
+            "x-api-key": api_key,
+            "Content-Type": "application/json"
+        }
+
+        if self.username and self.password:
+            auth = (self.username, self.password)
+        else:
+            auth = None
+
+        try:
+            r = self.retryrequests.put(url=url, headers=headers, auth=auth, data=json.dumps(data),
+                                        timeout=REQUEST_TIMEOUT_SECONDS, verify=False)
+            if r.status_code != 204:
+                return r.json()
+        except Exception as e:
+            raise Exception('TSANA service api "{}" failed, request:{}, {}'.format(path, data, str(e)))
+
     def get(self, api_key, path):
         url = self.endpoint + path
         headers = {
@@ -141,6 +161,31 @@ class TSANAClient(object):
             log.info("Series is empty")
 
         return multi_series_data
+
+    # Save a result back to TSANA
+    # Parameters: 
+    #   parameters: 
+    #        groupId: groupId in TSANA, which is copied from inference request, or from the entity
+    #        instance: instance object, which is copied from the inference request, or from the entity
+    #   model_id: model id
+    #   model_state: model state(TRAINING,READY,FAILED,DELETED)
+    #   message: detail message
+    # Return:
+    #   result: STATE_SUCCESS / STATE_FAIL
+    #   message: description for the result 
+    def save_training_result(self, parameters, model_id, model_state:str, message:str):
+        try:
+            body = {
+                'modelId': model_id, 
+                'state': model_state, 
+                'message': message
+            }
+
+            self.put(parameters['apiKey'], '/timeSeriesGroups/' + parameters['groupId'] + '/appInstances/' + parameters['instance']['instanceId'] + '/modelKey', body)
+            return STATUS_SUCCESS, ''
+        except Exception as e: 
+            traceback.print_exc(file=sys.stdout)
+            return STATUS_FAIL, str(e)
 
     # Save a result back to TSANA
     # Parameters: 
