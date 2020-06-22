@@ -253,7 +253,7 @@ class MagaPluginService(PluginService):
             actual_model_id = context['modelId']
             state = self.magaclient.state(request, actual_model_id)
             
-            if state['summary']['status'] == 'RUNNING':
+            if state['summary']['status'] == 'CREATED' or state['summary']['status'] == 'RUNNING':
                 model_state = ModelState.Training
             elif state['summary']['status'] == 'READY':
                 model_state = ModelState.Ready
