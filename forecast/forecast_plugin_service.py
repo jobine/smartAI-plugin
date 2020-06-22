@@ -214,3 +214,6 @@ class ForecastPluginService(PluginService):
             cur_time = get_time_offset(cur_time, (meta['granularityName'], meta['granularityAmount']),
                                                             + 1)
         return STATUS_SUCCESS, ''
+
+    def get_inference_time_range(self, parameters):
+        raise Exception('Not implemented!')

@@ -87,7 +87,21 @@ class MagaPluginService(PluginService):
         return STATUS_SUCCESS, result
 
     def do_delete(self, subscription, model_id):
-        return STATUS_SUCCESS, ''
+        meta = get_meta(self.config, subscription, model_id)
+
+        if 'context' not in meta:
+            raise Exception(meta['last_error'])
+
+        context = json.loads(meta['context'])
+
+        if 'modelId' not in context:
+            raise Exception(meta['last_error'])
+
+        actual_model_id = context['modelId']
+
+        request = Request()
+        request.headers['apim-subscription-id'] = subscription
+        return self.magaclient.delete_model(request, actual_model_id)
 
     def prepare_training_data(self, parameters):
         end_time = str_to_dt(parameters['endTime'])
@@ -253,24 +267,3 @@ class MagaPluginService(PluginService):
         except Exception as e:
             update_state(self.config, subscription, model_id, ModelState.Failed, None, str(e))
             return make_response(jsonify(dict(instanceId='', modelId=model_id, result=STATUS_FAIL, message=str(e), modelState=ModelState.Failed.name)), 400)
-
-    def delete(self, request, model_id):
-        try:
-            subscription = request.headers.get('apim-subscription-id', 'Official')
-            meta = get_meta(self.config, subscription, model_id)
-
-            if 'context' not in meta:
-                raise Exception(meta['last_error'])
-
-            context = json.loads(meta['context'])
-
-            if 'modelId' not in context:
-                raise Exception(meta['last_error'])
-
-            actual_model_id = context['modelId']
-            self.magaclient.delete_model(request, actual_model_id)
-            super().delete(request, model_id)
-            return make_response(jsonify(dict(instanceId='', modelId=model_id, result=STATUS_SUCCESS, message='Model {} has been deleted'.format(model_id), modelState=ModelState.Deleted.name)), 200)
-        except Exception as e:
-            return make_response(jsonify(dict(instanceId='', modelId=model_id, result=STATUS_FAIL, message=str(e), modelState=ModelState.Failed.name)), 400)
-        

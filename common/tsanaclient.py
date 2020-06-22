@@ -213,8 +213,9 @@ class TSANAClient(object):
                 item['timestamp'] = dt_to_str(str_to_dt(item['timestamp']))
                 body['results'].append({
                     'params': parameters['instance']['params'],
-                    'timestamp': item['timestamp'], 
+                    'timestamp': item['timestamp'],
                     'result': item, 
+                    'status': item['status'],
                     'createdTime': dt_to_str(datetime.datetime.now())
                 })
 

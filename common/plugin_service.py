@@ -104,11 +104,17 @@ class PluginService():
             shutil.rmtree(model_dir)
         return STATUS_SUCCESS, ''
 
+    def get_inference_time_range(self, parameters):
+        return []
+
     # inference_window: 30
     # endTime: endtime
     def inference_wrapper(self, subscription, model_id, parameters, timekey, callback): 
         log.info("Start inference wrapper %s by %s " % (model_id, subscription))
         try:
+            results = [{'timestamp': timestamp, 'status': InferenceState.Running.name} for timestamp in self.get_inference_time_range(parameters)]
+            self.tsanaclient.save_inference_result(parameters, results)
+
             prepare_model(self.config, subscription, model_id, timekey, True)
             prd_dir = os.path.join(self.config.model_temp_dir, subscription + '_' + model_id)
             result, message = self.do_inference(subscription, model_id, prd_dir, parameters)
@@ -225,7 +231,7 @@ class PluginService():
             result, message = self.do_delete(subscription, model_id)
             if result == STATUS_SUCCESS:
                 update_state(self.config, subscription, model_id, ModelState.Deleted)
-                return make_response(jsonify(dict(instanceId='', modelId=model_id, result=STATUS_SUCCESS, message='', modelState=ModelState.Deleted.name)), 200)
+                return make_response(jsonify(dict(instanceId='', modelId=model_id, result=STATUS_SUCCESS, message='Model {} has been deleted'.format(model_id), modelState=ModelState.Deleted.name)), 200)
             else:
                 raise Exception(message)
         except Exception as e:

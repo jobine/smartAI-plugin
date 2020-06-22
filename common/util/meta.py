@@ -99,7 +99,7 @@ def get_model_list(config, subscription):
 # Return:
 #   entity: a entity with a correct state
 def clear_state_when_necessary(config, subscription, model_key, entity):
-    if entity['state'] == ModelState.TRAINING.name:
+    if entity['state'] == ModelState.Training.name:
         azure_table = AzureTable(config.az_storage_account, config.az_storage_account_key)
         if not azure_table.exists_table(config.az_tsana_moniter_table):
             return entity
@@ -115,7 +115,7 @@ def clear_state_when_necessary(config, subscription, model_key, entity):
         if monitor_entity is None or (now - float(monitor_entity['ping']) > config.training_owner_life): 
             # The owner is dead, then
             # Fix the state
-            entity['state'] = ModelState.FAILED.name
-            update_state(config, subscription, model_key, ModelState.FAILED, None, 'Training job dead')
+            entity['state'] = ModelState.Failed.name
+            update_state(config, subscription, model_key, ModelState.Failed, None, 'Training job dead')
                 
     return entity
