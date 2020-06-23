@@ -82,6 +82,7 @@ class MagaPluginService(PluginService):
             if result['statusSummary']['status'] == 'READY' or result['statusSummary']['status'] == 'FAILED':
                 break
             else:
+                log.info("Inference id: {}, result: {}".format(resultId, result))
                 time.sleep(5)
 
         return STATUS_SUCCESS, result
@@ -110,9 +111,17 @@ class MagaPluginService(PluginService):
         else:
             start_time = end_time
 
-        gran = (parameters['gran']['granularityString'], parameters['gran']['customInSeconds'])
-        data_end_time = get_time_offset(end_time, gran, + 1)
-        data_start_time = get_time_offset(start_time, gran, - parameters['instance']['params']['tracebackWindow'] * 3)
+        data_start_time = start_time
+        data_end_time = end_time
+        for series_set in parameters['seriesSets']:
+            metric_meta = series_set['metricMeta']
+            gran = (metric_meta['granularityName'], metric_meta['granularityAmount'])
+            tmp_data_end_time = get_time_offset(end_time, gran, + 1)
+            tmp_data_start_time = get_time_offset(start_time, gran, - parameters['instance']['params']['tracebackWindow'] * 3)
+            if tmp_data_end_time > data_end_time:
+                data_end_time = tmp_data_end_time
+            if tmp_data_start_time < data_start_time:
+                data_start_time = tmp_data_start_time
 
         factor_def = parameters['seriesSets']
         factors_data = self.tsanaclient.get_timeseries(parameters['apiKey'], factor_def, data_start_time, data_end_time)
@@ -169,9 +178,17 @@ class MagaPluginService(PluginService):
         else:
             start_time = end_time
 
-        gran = (parameters['gran']['granularityString'], parameters['gran']['customInSeconds'])
-        data_end_time = get_time_offset(end_time, gran, + 1)
-        data_start_time = get_time_offset(start_time, gran, - parameters['instance']['params']['tracebackWindow'] * 3)
+        data_start_time = start_time
+        data_end_time = end_time
+        for series_set in parameters['seriesSets']:
+            metric_meta = series_set['metricMeta']
+            gran = (metric_meta['granularityName'], metric_meta['granularityAmount'])
+            tmp_data_end_time = get_time_offset(end_time, gran, + 1)
+            tmp_data_start_time = get_time_offset(start_time, gran, - parameters['instance']['params']['tracebackWindow'] * 3)
+            if tmp_data_end_time > data_end_time:
+                data_end_time = tmp_data_end_time
+            if tmp_data_start_time < data_start_time:
+                data_start_time = tmp_data_start_time
 
         factor_def = parameters['seriesSets']
         factors_data = self.tsanaclient.get_timeseries(parameters['apiKey'], factor_def, data_start_time, data_end_time)
