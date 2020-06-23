@@ -7,6 +7,7 @@ from common.util.timeutil import get_time_offset, str_to_dt, dt_to_str
 from common.util.series import Series
 from common.util.retryrequests import RetryRequests
 from common.util.constant import STATUS_SUCCESS, STATUS_FAIL
+from common.util.constant import InferenceState
 
 from telemetry import log
 
@@ -214,9 +215,8 @@ class TSANAClient(object):
                 body['results'].append({
                     'params': parameters['instance']['params'],
                     'timestamp': item['timestamp'],
-                    'result': item, 
-                    'status': item['status'],
-                    'createdTime': dt_to_str(datetime.datetime.now())
+                    'result': item,
+                    'status': InferenceState.Ready.name
                 })
 
             self.post(parameters['apiKey'], '/timeSeriesGroups/' + parameters['groupId'] + '/appInstances/' + parameters['instance']['instanceId'] + '/saveResult', body)

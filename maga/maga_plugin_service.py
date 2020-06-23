@@ -10,7 +10,7 @@ from common.plugin_service import PluginService
 from common.util.constant import STATUS_SUCCESS, STATUS_FAIL
 from common.util.constant import ModelState
 from common.util.constant import InferenceState
-from common.util.timeutil import dt_to_str, dt_to_str_file_name, str_to_dt
+from common.util.timeutil import dt_to_str, dt_to_str_file_name, str_to_dt, get_time_offset
 from common.util.csv import save_to_csv
 from common.util.azureblob import AzureBlob
 from common.util.meta import get_meta, update_state, get_model_list, clear_state_when_necessary
@@ -110,8 +110,12 @@ class MagaPluginService(PluginService):
         else:
             start_time = end_time
 
+        gran = (parameters['gran']['granularityString'], parameters['gran']['customInSeconds'])
+        data_end_time = get_time_offset(end_time, gran, + 1)
+        data_start_time = get_time_offset(start_time, gran, - parameters['instance']['params']['tracebackWindow'] * 3)
+
         factor_def = parameters['seriesSets']
-        factors_data = self.tsanaclient.get_timeseries(parameters['apiKey'], factor_def, start_time, end_time)
+        factors_data = self.tsanaclient.get_timeseries(parameters['apiKey'], factor_def, data_start_time, data_end_time)
 
         time_key = dt_to_str_file_name(end_time)
         data_dir = os.path.join(self.config.model_data_dir, time_key, str(uuid.uuid1()))
@@ -165,8 +169,12 @@ class MagaPluginService(PluginService):
         else:
             start_time = end_time
 
+        gran = (parameters['gran']['granularityString'], parameters['gran']['customInSeconds'])
+        data_end_time = get_time_offset(end_time, gran, + 1)
+        data_start_time = get_time_offset(start_time, gran, - parameters['instance']['params']['tracebackWindow'] * 3)
+
         factor_def = parameters['seriesSets']
-        factors_data = self.tsanaclient.get_timeseries(parameters['apiKey'], factor_def, start_time, end_time)
+        factors_data = self.tsanaclient.get_timeseries(parameters['apiKey'], factor_def, data_start_time, data_end_time)
 
         time_key = dt_to_str_file_name(end_time)
         data_dir = os.path.join(self.config.model_data_dir, time_key, str(uuid.uuid1()))
