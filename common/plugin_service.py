@@ -216,7 +216,7 @@ class PluginService():
             if meta == None:
                 return make_response(jsonify(dict(instanceId='', modelId=model_id, result=STATUS_FAIL, message='Model is not found!', modelState=ModelState.Deleted.name)), 400)
 
-            clear_state_when_necessary(self.config, subscription, model_id, meta)
+            meta = clear_state_when_necessary(self.config, subscription, model_id, meta)
             return make_response(jsonify(dict(instanceId='', modelId=model_id, result=STATUS_SUCCESS, message='', modelState=meta['state'])), 200)
         except Exception as e:
             return make_response(jsonify(dict(instanceId='', modelId=model_id, result=STATUS_FAIL, message=str(e), modelState=ModelState.Failed.name)), 400)

@@ -243,6 +243,9 @@ class MagaPluginService(PluginService):
             meta = get_meta(self.config, subscription, model_id)
             if meta is None:
                 return make_response(jsonify(dict(instanceId='', modelId=model_id, result=STATUS_SUCCESS, message='Model is not found!', modelState=ModelState.Deleted.name)), 200)
+            
+            if meta['state'] == ModelState.Training.name:
+                return make_response(jsonify(dict(instanceId='', modelId=model_id, result=STATUS_SUCCESS, message=meta['context'] if 'context' in meta else '', modelState=meta['state'])), 200)
 
             if 'context' not in meta:
                 raise Exception(meta['last_error'])
