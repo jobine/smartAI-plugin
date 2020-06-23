@@ -1,6 +1,6 @@
 import requests
 import time
-
+from telemetry import log
 
 class CommonException(Exception):
     pass
