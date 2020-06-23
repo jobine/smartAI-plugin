@@ -111,20 +111,18 @@ class MagaPluginService(PluginService):
         else:
             start_time = end_time
 
-        data_start_time = start_time
-        data_end_time = end_time
         for series_set in parameters['seriesSets']:
             metric_meta = series_set['metricMeta']
             gran = (metric_meta['granularityName'], metric_meta['granularityAmount'])
-            tmp_data_end_time = get_time_offset(end_time, gran, + 1)
-            tmp_data_start_time = get_time_offset(start_time, gran, - parameters['instance']['params']['tracebackWindow'] * 3)
-            if tmp_data_end_time > data_end_time:
-                data_end_time = tmp_data_end_time
-            if tmp_data_start_time < data_start_time:
-                data_start_time = tmp_data_start_time
+            data_end_time = get_time_offset(end_time, gran, + 1)
+            data_start_time = get_time_offset(start_time, gran, - parameters['instance']['params']['tracebackWindow'] * 3)
+            if data_end_time > end_time:
+                end_time = data_end_time
+            if data_start_time < start_time:
+                start_time = data_start_time
 
         factor_def = parameters['seriesSets']
-        factors_data = self.tsanaclient.get_timeseries(parameters['apiKey'], factor_def, data_start_time, data_end_time)
+        factors_data = self.tsanaclient.get_timeseries(parameters['apiKey'], factor_def, start_time, end_time)
 
         time_key = dt_to_str_file_name(end_time)
         data_dir = os.path.join(self.config.model_data_dir, time_key, str(uuid.uuid1()))
@@ -169,7 +167,7 @@ class MagaPluginService(PluginService):
 
             return result
         finally:
-            shutil.rmtree(data_dir, ignore_errors=True)        
+            shutil.rmtree(data_dir, ignore_errors=True)
 
     def prepare_inference_data(self, parameters):
         end_time = str_to_dt(parameters['endTime'])
@@ -178,20 +176,18 @@ class MagaPluginService(PluginService):
         else:
             start_time = end_time
 
-        data_start_time = start_time
-        data_end_time = end_time
         for series_set in parameters['seriesSets']:
             metric_meta = series_set['metricMeta']
             gran = (metric_meta['granularityName'], metric_meta['granularityAmount'])
-            tmp_data_end_time = get_time_offset(end_time, gran, + 1)
-            tmp_data_start_time = get_time_offset(start_time, gran, - parameters['instance']['params']['tracebackWindow'] * 3)
-            if tmp_data_end_time > data_end_time:
-                data_end_time = tmp_data_end_time
-            if tmp_data_start_time < data_start_time:
-                data_start_time = tmp_data_start_time
+            data_end_time = get_time_offset(end_time, gran, + 1)
+            data_start_time = get_time_offset(start_time, gran, - parameters['instance']['params']['tracebackWindow'] * 3)
+            if data_end_time > end_time:
+                end_time = data_end_time
+            if data_start_time < start_time:
+                start_time = data_start_time
 
         factor_def = parameters['seriesSets']
-        factors_data = self.tsanaclient.get_timeseries(parameters['apiKey'], factor_def, data_start_time, data_end_time)
+        factors_data = self.tsanaclient.get_timeseries(parameters['apiKey'], factor_def, start_time, end_time)
 
         time_key = dt_to_str_file_name(end_time)
         data_dir = os.path.join(self.config.model_data_dir, time_key, str(uuid.uuid1()))
