@@ -187,6 +187,8 @@ class MagaPluginService(PluginService):
             result['variable'] = variable
             result['mergeMode'] = parameters['instance']['params']['mergeMode']
             result['tracebackWindow'] = parameters['instance']['params']['tracebackWindow']
+            result['fillMergeNAMethod'] = parameters['instance']['params']['fillMissingMethod']
+            result['fillMergeNAValue'] = parameters['instance']['params']['fillMissingValue']
             result['source'] = blob_url
             result['startTime'] = dt_to_str(start_time)
             result['endTime'] = dt_to_str(end_time)
