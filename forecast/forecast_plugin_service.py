@@ -53,7 +53,7 @@ class ForecastPluginService(PluginService):
             if ret is None or 'value' not in ret:
                 return STATUS_FAIL, 'Read series rank filed. '
             seriesCount += len(ret['value'])
-            if seriesCount > self.config.series_limit:
+            if len(ret['value']) != 1 or seriesCount > self.config.series_limit:
                 return STATUS_FAIL, 'Cannot accept ambiguous factors or too many series in the group, limit is ' + str(self.config.series_limit) + '.'
 
         return STATUS_SUCCESS, ''

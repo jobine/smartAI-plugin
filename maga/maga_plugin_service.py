@@ -32,7 +32,33 @@ class MagaPluginService(PluginService):
         super().__init__()
         self.magaclient = MAGAClient(self.config.maga_service_endpoint)
 
+    # Verify if the data could be used for this application
+    # Parameters: 
+    #   series_sets: a array of series set
+    #   parameters: parameters of this application.
+    # Return:
+    #   result:  STATUS_FAIL / STATUS_SUCCESS
+    #   message: a description of the result
     def do_verify(self, subscription, parameters):
+        # Check series count, and each factor should only contain 1 series
+        seriesCount = 0
+        for data in parameters['seriesSets']:
+            dim = {}
+            for dimkey in data['dimensionFilter']: 
+                dim[dimkey] = [data['dimensionFilter'][dimkey]]
+            
+            meta = self.tsanaclient.get_metric_meta(parameters['apiKey'], data['metricId'])
+            if meta is None: 
+                return STATUS_FAIL, 'Metric {} is not found.'.format(data['metricId'])
+            dt = dt_to_str(str_to_dt(meta['dataStartFrom']))
+            para = dict(metricId=data['metricId'], dimensions=dim, count=2, startTime=dt)     # Let's said 100 is your limitation
+            ret = self.tsanaclient.post(parameters['apiKey'], '/metrics/' + data['metricId'] + '/rank-series', data=para)
+            if ret is None or 'value' not in ret:
+                return STATUS_FAIL, 'Read series rank filed. '
+            seriesCount += len(ret['value'])
+            if len(ret['value']) != 1 or seriesCount > self.config.series_limit:
+                return STATUS_FAIL, 'Cannot accept ambiguous factors or too many series in the group, limit is ' + str(self.config.series_limit) + '.'
+
         return STATUS_SUCCESS, ''
 
     def do_train(self, subscription, model_id, model_dir, parameters):
