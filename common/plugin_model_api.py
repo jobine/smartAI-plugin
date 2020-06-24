@@ -103,8 +103,8 @@ class PluginModelParameterAPI(Resource):
         self.__plugin_service = plugin_service
 
     @try_except
-    def post(self, model_id):
-        return self.__plugin_service.verify(request, model_id)
+    def post(self):
+        return self.__plugin_service.verify(request)
 
 
 class PluginModelListAPI(Resource):

@@ -239,4 +239,13 @@ class PluginService():
                 raise Exception(message)
         except Exception as e:
             return make_response(jsonify(dict(instanceId='', modelId=model_id, result=STATUS_FAIL, message=str(e), modelState=ModelState.Failed.name)), 400)
-        
+
+    def verify(self, request):
+        request_body = json.loads(request.data)
+        instance_id = request_body['instance']['instanceId']
+        subscription = request.headers.get('apim-subscription-id', 'Official')
+        result, message = self.do_verify(subscription, request_body)
+        if result != STATUS_SUCCESS:
+            return make_response(jsonify(dict(instanceId=instance_id, modelId='', result=STATUS_FAIL, message='Verify failed! ' + message, modelState=ModelState.Deleted.name)), 400)
+        else:
+            return make_response(jsonify(dict(instanceId=instance_id, modelId='', result=STATUS_SUCCESS, message='Verify successfully! ' + message, modelState=ModelState.Deleted.name)), 200)
