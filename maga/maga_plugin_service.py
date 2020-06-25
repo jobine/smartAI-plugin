@@ -54,7 +54,9 @@ class MagaPluginService(PluginService):
             para = dict(metricId=data['metricId'], dimensions=dim, count=2, startTime=dt)     # Let's said 100 is your limitation
             ret = self.tsanaclient.post(parameters['apiKey'], '/metrics/' + data['metricId'] + '/rank-series', data=para)
             if ret is None or 'value' not in ret:
-                return STATUS_FAIL, 'Read series rank filed. '
+                return STATUS_FAIL, 'Read series rank failed.'
+            if len(ret['value']) == 0:
+                return STATUS_FAIL, "Data not found for {}".format(para)
             seriesCount += len(ret['value'])
             if len(ret['value']) != 1 or seriesCount > self.config.series_limit:
                 return STATUS_FAIL, 'Cannot accept ambiguous factors or too many series in the group, limit is ' + str(self.config.series_limit) + '.'
