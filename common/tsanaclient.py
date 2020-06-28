@@ -131,6 +131,7 @@ class TSANAClient(object):
             ret = self.post(api_key, '/metrics/' + data['metricId'] + '/rank-series', data=para)
             for s in ret['value']:
                 if s['seriesId'] not in dedup:
+                    s['seriesSetId'] = data['seriesSetId']
                     s['startTime'] = start_str
                     s['endTime'] = end_str
                     s['dimension'] = s['dimensions']
@@ -144,20 +145,21 @@ class TSANAClient(object):
             ret = self.post(api_key, '/metrics/series/data', data=dict(value=series))
             if granularityName is not None:
                 multi_series_data = [
-                    Series(factor['id']['metricId'], factor['id']['seriesId'], factor['id']['dimension'],
+                    Series(factor['id']['metricId'], series[idx]['seriesSetId'], factor['id']['dimension'],
                            [dict(timestamp=get_time_offset(str_to_dt(y[0]), (granularityName, granularityAmount),
                                                            offset)
                                  , value=y[1])
                             for y in factor['values']])
-                    for factor in ret['value']
+                    for idx, factor in enumerate(ret['value'])
                 ]
             else:
                 multi_series_data = [
-                    Series(factor['id']['metricId'], factor['id']['seriesId'], factor['id']['dimension'],
+                    Series(factor['id']['metricId'], series[idx]['seriesSetId'], factor['id']['dimension'],
                            value=[dict(timestamp=y[0]
                                        , value=y[1])
                                   for y in factor['values']])
-                    for factor in ret['value']]
+                    for idx, factor in enumerate(ret['value'])
+                ]
         else:
             log.info("Series is empty")
 
