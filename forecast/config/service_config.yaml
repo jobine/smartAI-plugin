@@ -2,7 +2,7 @@ tsana_app_name: forecast
 tsana_api_key: 3517cf61-065d-40e9-8ed4-eda58147982d
 tsana_api_endpoint: https://stock-exp2-api.azurewebsites.net
 series_limit: 5000000
-models_in_training_limit: 100
+models_in_training_limit_per_instance: 1
 az_storage_account: tsana
 az_storage_account_key: K8wgcBGfq/gRmiPJLAIpW3wTr1IbmfAtbdYP5jPAcrCireE/55r5Z0cchi7bHV8fJL2+oMXvauPUQ2vBUpwpZw==
 az_tsana_meta_table: modelmetaplugintest

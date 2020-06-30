@@ -74,9 +74,6 @@ class PluginService():
     def do_train(self, subscription, model_id, model_dir, parameters):
         return STATUS_SUCCESS, ''
 
-    def do_state(self, subscription, model_id):
-        return STATUS_SUCCESS, ''
-
     def do_inference(self, subscription, model_id, model_dir, parameters):
         return STATUS_SUCCESS, ''
 
@@ -122,10 +119,10 @@ class PluginService():
             # TODO: Write the result back
             log.info("Inference result here: %s" % result)
             if callback is not None:
-                callback(subscription, model_id, timekey, result)    
+                callback(subscription, model_id, parameters, timekey, result, message)    
         except Exception as e:
             if callback is not None:
-                callback(subscription, model_id, timekey, STATUS_FAIL, str(e))
+                callback(subscription, model_id, parameters, timekey, STATUS_FAIL, str(e))
         return STATUS_SUCCESS, ''
 
     def train_callback(self, subscription, model_id, parameters, model_state, timekey, last_error=None):
@@ -142,7 +139,7 @@ class PluginService():
                 last_error = 'Model storage failed!'
 
         update_state(self.config, subscription, model_id, model_state, None, last_error)
-        return self.tsanaclient.save_training_result(parameters, model_id, model_state, last_error)
+        return self.tsanaclient.save_training_result(parameters, model_id, model_state.name, last_error)
 
     def inference_callback(self, subscription, model_id, parameters, timekey, result, last_error=None):
         log.info ("inference callback %s by %s , result = %s" % (model_id, subscription, result))
@@ -150,8 +147,6 @@ class PluginService():
             # Inference failed
             # Do a model update
             prepare_model(self.config, subscription, model_id, timekey, True)
-        
-        return self.tsanaclient.save_inference_result(parameters, result['result'])
 
     def train(self, request):
         request_body = json.loads(request.data)

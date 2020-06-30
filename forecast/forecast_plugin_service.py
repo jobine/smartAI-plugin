@@ -216,4 +216,4 @@ class ForecastPluginService(PluginService):
         return STATUS_SUCCESS, ''
 
     def get_inference_time_range(self, parameters):
-        raise Exception('Not implemented!')
+        return []
