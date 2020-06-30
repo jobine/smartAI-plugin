@@ -111,6 +111,7 @@ class MagaPluginService(PluginService):
                 break
             else:
                 log.info("Inference id: {}, result: {}".format(resultId, result))
+                self.tsanaclient.save_inference_result(parameters, result['result'])
                 time.sleep(5)
 
         return STATUS_SUCCESS, result
