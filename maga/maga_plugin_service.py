@@ -89,9 +89,6 @@ class MagaPluginService(PluginService):
             update_state(self.config, subscription, model_id, ModelState.Failed, json.dumps(result), result['message'])
             return STATUS_FAIL, result['message']
 
-    def do_state(self, subscription, model_id):
-        return STATUS_SUCCESS, ''
-
     def do_inference(self, subscription, model_id, model_dir, parameters):
         request = Request()
         request.headers['apim-subscription-id'] = subscription
@@ -137,22 +134,29 @@ class MagaPluginService(PluginService):
 
         return STATUS_SUCCESS, ''
 
-    def prepare_training_data(self, parameters):
+    def get_data_time_range(self, parameters):
         end_time = str_to_dt(parameters['endTime'])
         if 'startTime' in parameters:
             start_time = str_to_dt(parameters['startTime'])
         else:
             start_time = end_time
 
+        min_start_time = start_time
+        max_end_time = end_time
         for series_set in parameters['seriesSets']:
             metric_meta = series_set['metricMeta']
             gran = (metric_meta['granularityName'], metric_meta['granularityAmount'])
             data_end_time = get_time_offset(end_time, gran, + 1)
             data_start_time = get_time_offset(start_time, gran, - parameters['instance']['params']['tracebackWindow'] * 3)
-            if data_end_time > end_time:
-                end_time = data_end_time
-            if data_start_time < start_time:
-                start_time = data_start_time
+            if data_end_time > max_end_time:
+                max_end_time = data_end_time
+            if data_start_time < min_start_time:
+                min_start_time = data_start_time
+
+        return min_start_time, max_end_time
+
+    def prepare_training_data(self, parameters):
+        start_time, end_time = self.get_data_time_range(parameters)
 
         factor_def = parameters['seriesSets']
         factors_data = self.tsanaclient.get_timeseries(parameters['apiKey'], factor_def, start_time, end_time)
@@ -205,21 +209,7 @@ class MagaPluginService(PluginService):
             shutil.rmtree(data_dir, ignore_errors=True)
 
     def prepare_inference_data(self, parameters):
-        end_time = str_to_dt(parameters['endTime'])
-        if 'startTime' in parameters:
-            start_time = str_to_dt(parameters['startTime'])
-        else:
-            start_time = end_time
-
-        for series_set in parameters['seriesSets']:
-            metric_meta = series_set['metricMeta']
-            gran = (metric_meta['granularityName'], metric_meta['granularityAmount'])
-            data_end_time = get_time_offset(end_time, gran, + 1)
-            data_start_time = get_time_offset(start_time, gran, - parameters['instance']['params']['tracebackWindow'] * 3)
-            if data_end_time > end_time:
-                end_time = data_end_time
-            if data_start_time < start_time:
-                start_time = data_start_time
+        start_time, end_time = self.get_data_time_range(parameters)
 
         factor_def = parameters['seriesSets']
         factors_data = self.tsanaclient.get_timeseries(parameters['apiKey'], factor_def, start_time, end_time)
