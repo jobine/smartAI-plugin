@@ -118,6 +118,8 @@ class MagaPluginService(PluginService):
 
     def do_delete(self, subscription, model_id):
         meta = get_meta(self.config, subscription, model_id)
+        if meta is None or meta['state'] == ModelState.Deleted.name:
+            raise Exception('Model is not found!')
 
         if 'context' not in meta:
             raise Exception(meta['last_error'])
@@ -131,7 +133,9 @@ class MagaPluginService(PluginService):
 
         request = Request()
         request.headers['apim-subscription-id'] = subscription
-        return self.magaclient.delete_model(request, actual_model_id)
+        self.magaclient.delete_model(request, actual_model_id)
+
+        return STATUS_SUCCESS, ''
 
     def prepare_training_data(self, parameters):
         end_time = str_to_dt(parameters['endTime'])

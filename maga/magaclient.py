@@ -53,7 +53,8 @@ class MAGAClient(object):
         retryrequests = RetryRequests(self.retrycount, self.retryinterval)
         try:
             r = retryrequests.delete(url=url, headers=headers, auth=auth, timeout=REQUEST_TIMEOUT_SECONDS, verify=False)
-            return r.json()
+            if r.status_code != 204:
+                return r.json()
         except Exception as e:
             raise Exception('MAGA service api "{}" failed, {}'.format(path, str(e)))
 
