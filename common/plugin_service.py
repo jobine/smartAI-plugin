@@ -60,7 +60,7 @@ class PluginService():
             log.error("No configuration '%s', or the configuration is not in JSON format. " % (config_file))
             exit()
         self.config = config
-        self.tsanaclient = TSANAClient(config.tsana_api_endpoint, config.tsana_api_key, config.series_limit)
+        self.tsanaclient = TSANAClient(config.tsana_api_endpoint, config.series_limit)
 
         init_monitor(config)
         sched.add_job(func=lambda: run_monitor(config), trigger="interval", seconds=10)
