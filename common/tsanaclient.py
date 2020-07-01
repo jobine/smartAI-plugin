@@ -83,7 +83,7 @@ class TSANAClient(object):
 
     # To get the meta of a specific metric from TSANA
     # Parameters:
-    #   config: a dict object which should include TSANA_API_KEY, TSANA_API_ENDPOINT, SERIES_LIMIT
+    #   apiKey: api key for specific user
     #   metric_id: a UUID string
     # Return:
     #   meta: the meta of the specified metric, or None if there is something wrong. 
@@ -99,7 +99,7 @@ class TSANAClient(object):
 
     # Query time series from TSANA
     # Parameters: 
-    #   config: a dict object which should include TSANA_API_KEY, TSANA_API_ENDPOINT
+    #   apiKey: api key for specific user
     #   series_sets: Array of series set
     #   start_time: inclusive, the first timestamp to be query
     #   end_time: exclusive
@@ -165,9 +165,10 @@ class TSANAClient(object):
 
         return multi_series_data
 
-    # Save a result back to TSANA
+    # Save a training result back to TSANA
     # Parameters: 
-    #   parameters: 
+    #   parameters: a dict object which should includes
+    #        apiKey: api key for specific user
     #        groupId: groupId in TSANA, which is copied from inference request, or from the entity
     #        instance: instance object, which is copied from the inference request, or from the entity
     #   model_id: model id
@@ -190,10 +191,10 @@ class TSANAClient(object):
             traceback.print_exc(file=sys.stdout)
             return STATUS_FAIL, str(e)
 
-    # Save a result back to TSANA
+    # Save a inference result back to TSANA
     # Parameters: 
-    #   config: a dict object which should include AZ_STORAGE_ACCOUNT, AZ_STORAGE_ACCOUNT_KEY, AZ_META_TABLE
-    #   parameters: 
+    #   parameters: a dict object which should includes
+    #        apiKey: api key for specific user
     #        groupId: groupId in TSANA, which is copied from inference request, or from the entity
     #        instance: instance object, which is copied from the inference request, or from the entity
     #   result: an array of inference result. 
@@ -227,13 +228,16 @@ class TSANAClient(object):
             traceback.print_exc(file=sys.stdout)
             return STATUS_FAIL, str(e)
 
-    # Save a result back to TSANA
+    # Save a inference result back to TSANA
     # Parameters: 
-    #   config: a dict object which should include AZ_STORAGE_ACCOUNT, AZ_STORAGE_ACCOUNT_KEY, AZ_META_TABLE
-    #   parameters: 
+    #   parameters: a dict object which should includes 
+    #        apiKey: api key for specific user
     #        groupId: groupId in TSANA, which is copied from inference request, or from the entity
     #        instance: instance object, which is copied from the inference request, or from the entity
-    #   result: an array of inference result. 
+    #   metric_id: a UUID string
+    #   dimensions: a dict includes dimension name and value
+    #   timestamps: an array of timestamps
+    #   values: an array of inference result values
     # Return:
     #   result: STATE_SUCCESS / STATE_FAIL
     #   messagee: description for the result 

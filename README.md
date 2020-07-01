@@ -162,3 +162,75 @@ contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additio
 #### model_id: model id
 ### Response:
     STATUS_SUCCESS/STATUS_FAIL, ''
+
+# TSANA API
+## get_metric_meta
+### To get the meta of a specific metric from TSANA
+### Params:
+#### api_key: api key for specific user
+#### metric_id: a UUID string
+### Response:
+    meta: the meta of the specified metric, or None if there is something wrong. 
+
+## get_dimesion_values
+### To get the dimension value of a specific dimension of a metric from TSANA
+### Params:
+#### api_key: api key for specific user
+#### metric_id: a UUID string
+#### dimension_name: a string
+### Response:
+    dimension value: a string value of the specified dimension of a metric, or None if there is something wrong.
+
+## get_timeseries
+### Query time series from TSANA
+### Params:
+#### api_key: api key for specific user
+#### series_sets: Array of series set
+#### start_time: inclusive, the first timestamp to be query
+#### end_time: exclusive
+#### offset: a number will be added to each timestamp of each time-series. The unit is defined by granularity
+#### granularityName: if Offset > 0, the granularityName is Monthly / Weekly / Daily / Hourly / Minutely / Secondly / Custom
+#### granularityAmount: if granularityName is Custom, granularityAmount is the seconds of the exact granularity
+### Response:
+    A array of Series object
+
+## save_training_result
+### Save a training result back to TSANA
+### Params:
+#### parameters: a dict object which should includes
+    apiKey: api key for specific user
+    groupId: groupId in TSANA, which is copied from inference request, or from the entity
+    instance: instance object, which is copied from the inference request, or from the entity
+#### model_id: model id
+#### model_state: model state(Training,Ready,Failed,Deleted)
+#### message: detail message
+### Response:
+#### result: STATE_SUCCESS / STATE_FAIL
+#### message: description for the result
+
+## save_inference_result
+### Save a inference result back to TSANA
+### Params:
+#### parameters: a dict object which should includes
+    apiKey: api key for specific user
+    groupId: groupId in TSANA, which is copied from inference request, or from the entity
+    instance: instance object, which is copied from the inference request, or from the entity
+#### result: an array of inference result.
+### Response:
+#### result: STATE_SUCCESS / STATE_FAIL
+#### message: description for the result
+
+## save_data_points
+### Save a inference result back to TSANA
+### Params:
+#### parameters: a dict object which should includes
+    apiKey: api key for specific user
+    groupId: groupId in TSANA, which is copied from inference request, or from the entity
+    instance: instance object, which is copied from the inference request, or from the entity
+#### metric_id: a UUID string
+#### dimensions: a dict includes dimension name and value
+#### timestamps: an array of timestamps
+#### values: an array of inference result values
+### Response:
+#### result: STATE_SUCCESS / STATE_FAIL
+#### message: description for the result
